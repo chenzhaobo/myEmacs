@@ -1,138 +1,140 @@
-* ��ݼ�
-C-               ����ctrl��
-M-              ����alt��
-S-               ����shift��
-C-M-S-v     ��ʾͬʱ����ctrl+alt+shift+v
-** ��ͨ��ݼ�
-*** �ƶ�
-C-v            ��һ��
-M-v           ��һ��
-C-l             ���������������Ļ�м�
-C-u 10 C-l   ��ǰ���������������Ļ��10��
-C-l C-l         �ظ�ִ�зֱ𽫹�굱ǰ�д�����Ļ�м䣬�����У�������
-C-j              �ڹ�����ڴ�����
-C-p            ��һ��
-C-p            ��һ��
-C-f             ǰһ���ַ�
-C-b            ��һ���ַ�
-C-a             �ƶ�������
-C-e             �ƶ�����β
-C-u             ���� ����  �ظ�����N�Σ����� C-u 8 C-f ǰ��8���ַ�
-C-g             ȡ������ִ�е�ָ��
+* 快捷键
+C-               代表ctrl键
+M-              代表alt键
+S-               代表shift键
+C-M-S-v     表示同时摁下ctrl+alt+shift+v
+** 普通快捷键
+*** 移动
+C-v            下一屏
+M-v           上一屏
+C-l             光标所在行置于屏幕中间
+C-u 10 C-l   当前光标所在行置于屏幕第10行
+C-l C-l         重复执行分别将光标当前行带到屏幕中间，最上行，最下行
+C-j              在光标所在处换行
+C-p            上一行
+C-p            下一行
+C-f             前一个字符
+C-b            后一个字符
+C-a             移动到行首
+C-e             移动到行尾
+C-u             数字 命令  重复命令N次，距离 C-u 8 C-f 前进8个字符
+C-g             取消正在执行的指令
 
 
-M-f             ǰ��һ������
-M-b            ����һ������
-M-a             �ƶ�������
-M-e             �ƶ�����β
-M-S-<    �ı�ͷ
-M-S->    �ı�β
-*** ɾ��
-<del>        ɾ�����ǰ��һ���ַ�
-C-d             ɾ�������һ���ַ�
-M-<del>   �Ƴ����ǰ��һ����
-M-d           �Ƴ������һ����
-C-k             �Ƴ���굽��β���ַ����ڶ��ΰ�C-k���Ƴ����з�������һ���հ���ɾ��
-M-k            �Ƴ���굽��β���ַ�
-C-S-@       ��ǹ�굱ǰλ�ã�ʹ��C-f,C-b,C-p,C-n���߷�����ƶ����������֣�emacs����������ѡ����ı�
-M-S-@       ͬ��
-C-w            ��C-S-P@���ʹ�ã�ɾ��һ��ѡ�������
-C-y             �ٻر����һ�α��Ƴ������֣����������C-k�Ƴ�ʱ��һ��C-y���ٻ�����C-k�Ƴ�������
-M-y           ��C-y�ٻ������������ֺ�M-y�Ϳ��ٻ���ǰһ�α��Ƴ������ݣ��ٰ�M-y�ٻ����ϴε����ݣ��Դ����ƣ��ٻ�������ѭ���ġ�
-                  C-u 1 M-y �ٻص����ڶ��α��Ƴ������֣�C-u -1 M-y �ٻص�һ�α��Ƴ�������
-*** ����
-C-/              ����һ����������ɵ����иı䣬����ʹ�û����ǰ������Ҳ�Դ˳��������ǹ���ƶ�����
-C-x u           ͬC-/
-C-_              ͬC-/
+M-f             前进一个单词
+M-b            后退一个单词
+M-a             移动到句首
+M-e             移动到句尾
+M-S-<    文本头
+M-S->    文本尾
+M-g M-g    跳转到指定行
 
-*** �ļ�
-C-x C-f        Ѱ��һ���ļ�
-C-x C-s        �����ļ�
-C-x s           �������л���������ļ�
- M-x customize-variable <�س�> make-backup-files <�س�>   �ص��ļ���������
+*** 删除
+<del>        删除光标前的一个字符
+C-d             删除光标后的一个字符
+M-<del>   移除光标前的一个词
+M-d           移除光标后的一个词
+C-k             移除光标到行尾的字符，第二次按C-k会移除换行符，即把一个空白行删除
+M-k            移除光标到句尾的字符
+C-S-@       标记光标当前位置，使用C-f,C-b,C-p,C-n或者方向键移动到其他文字，emacs高亮光标和所选择的文本
+M-S-@       同上
+C-w            剪切。和C-S-P@配合使用，删除一段选择的文字
+M-w            复制
+C-y             召回被最近一次被移除的文字，当连续多次C-k移除时，一次C-y会召回所有C-k移除的内容
+M-y           在C-y召回最近溢出的文字后，M-y就可召回再前一次被移除的内容，再按M-y召回再上次的内容，以此类推，召回内容是循环的。
+                  C-u 1 M-y 召回倒数第二次被移除的文字，C-u -1 M-y 召回第一次被移除的文字
+*** 撤销
+C-/              消除一个命令所造成的所有改变，连续使用会把以前的命令也以此撤销。但是光标移动不算
+C-x u           同C-/
+C-_              同C-/
 
-*** ����
-C-s               ��ǰ����
-C-r               �������
-����C-s  �����������Ĵʣ�ÿ����һ���ַ���emacsͬ��ƥ����������ַ�����C-s ������ת����һ��ƥ��ʵ�λ�ã�
-��C-r ������ת����һ��ƥ��ʵ�λ�ã���<del>��������һ��ƥ��Ĵʵ�λ�ã����س����ͣ���ڵ�ǰ����λ�á�
+*** 文件
+C-x C-f        寻找一个文件
+C-x C-s        保存文件
+C-x s           保存所有缓冲区里的文件
+ M-x customize-variable <回车> make-backup-files <回车>   关掉文件备份命令
+
+*** 搜索
+C-s               向前搜索
+C-r               向后搜索
+按下C-s  后，输入搜索的词，每输入一个字符，emacs同步匹配已输入的字符，按C-s 可以跳转到下一个匹配词的位置，
+按C-r 可以跳转到上一个匹配词的位置，按<del>键跳回上一个匹配的词的位置，按回车光标停留在当前搜索位置。
+M-x occur <enter>   回车后输入需要查找的字符，在新的窗格中列出所有包含查找字符的行
+
+*** 缓冲区buffer
+emacs下方的小框叫做小缓冲区minibuffer
+*Messages* 这个是emacs的消息缓冲区
+
+C-x C-b        列出缓冲区
+C-x b buffer名  直接切换到指定buffer
+
+*** 命令集拓展
+C-x C-c  退出emacs
+**** 替换字符串
+M-x repl s<回车>旧字符串<回车>新字符串<回车>   替换字符串命令  
 
 
-*** ������buffer
-emacs�·���С�����С������minibuffer
-*Messages* �����emacs����Ϣ������
+*** 查询
+C-h k C-f    查询C-f命令的文档
 
-C-x C-b        �г�������
-C-x b buffer��  ֱ���л���ָ��buffer
+** 窗口快捷键
+*** 多窗格
+C-x 0          关闭当前窗口
+C-x 1          保留当前窗口，关闭其他窗口
+C-x 2          将当前窗格划分为两个窗格（上下）
+C-x 3          将当前窗格划分为两个窗格（左右）
+C-x 4 C-f    在下一个窗格中打开文件
+C-M-v        滚动下一个窗格，向下翻页
+C-M-S-v  滚动下一个窗格，向上翻页
+C-x o          光标切换到另外一个窗格
+ESC ESC ESC 关闭其余窗格
+*** 多窗口
+M-x make-frame <Return>   打开一个新窗口
+M-x delete-frame <Return>  关闭选中的窗口
+** 获取帮助
+c-h c 命令   获取命令的最基本帮助
+C-h k          获取命令的详细信息
+C-h f           解释一个函数，需要输入函数名
+C-h v          查询一个变量
+C-h a          相关命令搜索
+                输入一个关键词然后 Emacs 会列出所有命令名中包含此关键词
+                的命令。这些命令全都可以用 M-x 来启动。对于某些命令来说，
+                相关命令搜索还会列出一两个组合键。
+ C-h i        阅读手册（也就是通常讲的 Info）。
+                这个命令会打开一个称为“*info*”的特殊缓冲区，在那里，
+                你可以阅读安装在系统里的软件包使用手册。要读 Emacs 的使
+                用手册，按 m emacs <Return> 就可以了。如果你之前从没用
+                过 Info 系统，那么请按“?”，Emacs 会带你进入 Info 的使
+                用指南。在看完本快速指南之后，Emacs Info 会成为你的主要
+                参考文档。
+C-h r        emacs使用手册 manual
 
-*** �����չ
-C-x C-c  �˳�emacs
-**** �滻�ַ���
-M-x repl s<�س�>���ַ���<�س�>���ַ���<�س�>   �滻�ַ�������  
+* emacs功能
+** 自动保存
+emacs 会自动定期保存文件，自动保存的文件名头尾都有一个#。例如#hello.c#。
+如果不小心未存盘退出，下次打开源文件后，输入M-x recover file <回车> 来恢复自动保存的文件，再提示确认的时候输入yes
 
-
-*** ��ѯ
-C-h k C-f    ��ѯC-f������ĵ�
-
-** ���ڿ�ݼ�
-*** �ര��
-C-x 1          ������ǰ���ڣ��ر���������
-C-x 2          ����ǰ���񻮷�Ϊ�����������£�
-C-x 3          ����ǰ���񻮷�Ϊ�����������ң�
-C-x 4 C-f    ����һ�������д��ļ�
-C-M-v        ������һ���������·�ҳ
-C-M-S-v  ������һ���������Ϸ�ҳ
-C-x o          ����л�������һ������
-ESC ESC ESC �ر����ര��
-*** �ര��
-M-x make-frame <Return>   ��һ���´���
-M-x delete-frame <Return>  �ر�ѡ�еĴ���
-** ��ȡ����
-c-h c ����   ��ȡ��������������
-C-h k          ��ȡ�������ϸ��Ϣ
-C-h f           ����һ����������Ҫ���뺯����
-C-h v          ��ѯһ������
-C-h a          �����������
-                ����һ���ؼ���Ȼ�� Emacs ���г������������а����˹ؼ���
-                �������Щ����ȫ�������� M-x ������������ĳЩ������˵��
-                ����������������г�һ������ϼ���
- C-h i        �Ķ��ֲᣨҲ����ͨ������ Info����
-                ���������һ����Ϊ��*info*�������⻺�����������
-                ������Ķ���װ��ϵͳ���������ʹ���ֲᡣҪ�� Emacs ��ʹ
-                ���ֲᣬ�� m emacs <Return> �Ϳ����ˡ������֮ǰ��û��
-                �� Info ϵͳ����ô�밴��?����Emacs �������� Info ��ʹ
-                ��ָ�ϡ��ڿ��걾����ָ��֮��Emacs Info ���Ϊ�����Ҫ
-                �ο��ĵ���
-C-h r        emacsʹ���ֲ� manual
-
-* emacs����
-** �Զ�����
-emacs ���Զ����ڱ����ļ����Զ�������ļ���ͷβ����һ��#������#hello.c#��
-�����С��δ�����˳����´δ�Դ�ļ�������M-x recover file <�س�> ���ָ��Զ�������ļ�������ʾȷ�ϵ�ʱ������yes
-
-M-x recover file <�س�>   �ָ��Զ������ļ�
-**  ״̬��
+M-x recover file <回车>   恢复自动存盘文件
+**  状态栏
    -:**- TUTORIAL.cn 63% L749 (Fundamental)
 
-״̬����ʾ�� Emacs ��״̬�������ڱ༭�����ֵ�һЩ��Ϣ��
+状态栏显示了 Emacs 的状态和你正在编辑的文字的一些信息。
 
-��Ӧ��֪���ļ�������˼�ɣ��������ҵ����Ǹ��ļ��-NN%-- ��ʾ���ǹ����
-ȫ���е�λ�á����λ���ļ��Ŀ�ͷ����ô����ʾ --Top-- ������ --00%--����
-��λ���ļ���ĩβ������ʾ --Bot--������ļ���С��һ����������ʾȫ�����ݣ�
-��ô״̬������ʾ --All--��
+你应该知道文件名的意思吧？就是你找到的那个文件嘛。-NN%-- 显示的是光标在
+全文中的位置。如果位于文件的开头，那么就显示 --Top-- 而不是 --00%--；如
+果位于文件的末尾，就显示 --Bot--。如果文件很小，一屏就足以显示全部内容，
+那么状态栏会显示 --All--。
 
-��L�� ���������ָ����˹�������е��кš�
+“L” 和其后的数字给出了光标所在行的行号。
 
-�ͷ���Ǻţ�*����ʾ���Ѿ������������Ķ����ոմ򿪵��ļ��϶�û�б��Ķ�
-��������״̬������ʾ�Ĳ����ǺŶ��Ƕ��ߣ�-����
+最开头的星号（*）表示你已经对文字做过改动。刚刚打开的文件肯定没有被改动
+过，所以状态栏上显示的不是星号而是短线（-）。
 
-M-x text-mode <�س�>   ����textmodeģʽ
-M-x auto-fill-mode <�س�>  �Զ�����ģʽ
-C-u 70 C-x f                            �����������б߽�ֵΪ70
-M-q                                        �Զ�����ǰ��������ʾ
-C-h m                               �鿴��ǰmode���ĵ�
-
-
+M-x text-mode <回车>   进入textmode模式
+M-x auto-fill-mode <回车>  自动折行模式
+C-u 70 C-x f                            设置文字折行边界值为70
+M-q                                        自动将当前行折行显示
+C-h m                               查看当前mode的文档
 
 
 
@@ -150,4 +152,72 @@ C-h m                               �鿴��ǰmode���ĵ�
 
 
 
+
+
+* org-mode
+org-mode 新手文档
+http://orgmode.org/worg/org-tutorials/org4beginners.html#orgheadline3
+** 快捷键
+Tab          展开标题
+S-Tab       伸缩或者展开标题
+S-left/right  变更todo的状态
+M-up        alt+向上箭头，将标题和内容往上移动
+M-down    alt+向下箭头，将标题和内容往下移动
+M-right/left   将标题降一级/升一级
+M-enter         增加一个和上一级同级的标题
+C-c C-c         (org-toggle-checkbox)    更新checkbox状态
+C-c C-x C-b    (org-toggle-checkbox)   将光标所在标题的所有checkbox置为完成状态
+M-S-<RET>     (org-insert-todo-heading)  新增一个包含todo 的标题，如果在plain lists后输入，则增加一个同级选项，
+                                                                     如在checklist下输入，则增加一个新的checklist
+C-c #                更新statistics cookie，例如，新增或者删除checkbox后，更新标题后的状态数量【1/5】
+C-u C-c .           加入时间和日期 如 :: <2017-02-27 周一 01:40>
+C-c .                 加入时间，如 :: <2017-02-27 周一>
+** notes 标记
+ 1. org-mode中可以对文字添加标记，让文字显示成不同的样式
+ 2. 在文字的前后添加不同的符号。如*粗体*， *bold*,/斜体/， /italic/,_下滑线_, _underlined_,=代码=, =code= and ~翻译~，~verbatim~, 
+       and,如果有需要 ,+删除线+， +strike-through+.
+ 3. *djf* /斜体/ /dfjslfj/ =import os=  +1231+ 。貌似标记功能不支持中文字符。
+** Plain lists
+在一行的以 - 开头，然后按在- 符号上按 C-c - 将变换列表的标记状态
+- 第一种，符号为： -  
+----
++ 第二种，符号为：+
+----
+1. 第三种，符号为：1.
+-----
+1) 第四种，符号为：1）
+
+** checkbox  [0/1] 
+- [ ] 使用一个- 和[ ] ,中括号中间是一个空格。然后移动光标到[ ] 上，按C-c C-c，这样就可以添加一行checkbox
+在标题的后面加一个 [0/1]  [0%]即两个中括号，中间加一个/或者%，按C-c C-c 更新checkbox状态
+- [3/5] headline
+       - [-] call people [2/3]
+         - [X] Peter
+         - [ ] Sarah
+         - [X] Sam
+       - [X] order food
+       - [X] think about what music to play
+       - [X] talk to the neighbors
+       - [-] 哈哈哈
+	 - [X] 哈哈哈的子项
+	 - [ ] 哈哈哈
+** Configuring todos 配置todo项 
+1. 在文件中配置
+   在文件的开头加入如下内容，TODO IN-PROGRESS WAITING DONE  可自行替换
+=#+TODO: TODO IN-PROGRESS WAITING DONE=
+2. 在emacs配置文件中加入一下内容，将会在所有的org文件中生效
+(setq org-todo-keywords
+ '((sequence "TODO" "IN-PROGRESS" "WAITING" "DONE")))
+* elisp
+学习elisp语法
+https://learnxinyminutes.com/docs/elisp/
+学习emacs的网站
+http://emacs.sexy/#learn
+
+** *scrath* buffer
+练习 lisp 可以在*scrath* buffer中进行
+在*scrath* buffer中，在函数后按c-j 即可立即执行函数
+在el文件中，按C-x C-e 执行函数
+** lisp语法
+（+ 2 2） +后需有空格，表示2+2
 
