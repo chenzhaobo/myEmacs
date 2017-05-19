@@ -29,6 +29,19 @@ M-S-<    文本头
 M-S->    文本尾
 M-g M-g    跳转到指定行
 
+C-M-a   跳转到上一个函数
+C-M-e   跳转到下一个函数
+C-x z   通过再次键入 z，以便再次重复执行一次该命令；不断地键入 z 就可以反复地执行该命令
+
+
+*** 注释
+M-;  comment-dwim        注释所选区域,如未选择，在行后注释；如果所选区域已注释，则去掉注释
+C-x C-;                  注释一行或者反注释一行
+comment-or-uncomment-region   注释或者反注释所选区域
+comment-kill             删掉注释
+comment-indent           在行后添加注释
+comment-indent-new-line  在新的一行添加注释
+comment-box   注释一片
 *** 删除
 <del>        删除光标前的一个字符
 C-d             删除光标后的一个字符
@@ -73,6 +86,25 @@ C-x C-c  退出emacs
 **** 替换字符串
 M-x repl s<回车>旧字符串<回车>新字符串<回车>   替换字符串命令  
 
+*** 选择
+**** 键盘
+矩形区块
+您是否曾经希望能够从文档中选择文本区块，以对其进行复制、剪切或者粘贴？您的确可以这样做。在 Emacs 中，我们将通过文本的四个角中任何两个相对的角所指定的文本选择称为矩形区块；接下来的部分将向您介绍如何有效地使用矩形区块。
+| 键盘输入 | 功能             | 描述                                                                               |
+| C-space  | set-mark-command | 标记矩形区块的一个角（光标标记其相对的角）。                                       |
+| C-x r k  | kill-rectangle   | 剪切当前的矩形区块，并将其保存在一个特殊的矩形区块缓冲区中。                       |
+| C-x r d  | delete-rectangle | 删除当前的矩形区块，并不为粘贴而保存它。                                           |
+| C-x r c  | clear-rectangle  | 清除当前的矩形区块，使用空白字符替换整个区域。                                     |
+| C-x r o  | open-rectangle   | 打开当前的矩形区块，使用空白字符填充整个区域，并将该矩形区块的所有文本移动到右边。 |
+| C-x r y  | yank-rectangle   | 在光标处，粘贴上一次剪切的矩形区块的内容，将所有的现有文本移动到右边。             |
+
+**** 鼠标
+| B1       | 这一命令将设置插入点位置；拖动鼠标左键以设置区域。                                                                                       |
+| B1-B1    | 这一命令标记一个单词。                                                                                                                   |
+| B1-B1-B1 | 这一命令标记一行。                                                                                                                       |
+| B2       | 这一命令插入最近被杀死的内容，并把光标移动到插入内容的末尾。                                                                             |
+| B3       | 这一命令会设置并突出显示区域，然后无需删除就将其放在 kill 缓冲区中。如果某个区域已经被突出显示并设置，该区域的末尾将移动到您单击的位置。 |
+| B3-B3    | 这个命令将突出显示区域，然后删除它。如果某个区域已经被突出显示并设置，该区域的末尾将移动到您单击的位置，此后该区域将被删除。             |
 
 *** 查询
 C-h k C-f    查询C-f命令的文档
@@ -88,9 +120,69 @@ C-M-v        滚动下一个窗格，向下翻页
 C-M-S-v  滚动下一个窗格，向上翻页
 C-x o          光标切换到另外一个窗格
 ESC ESC ESC 关闭其余窗格
+C-u 11 C-x 3  ，以水平方向将当前窗口划分为两半，并使最左边的窗口 具有 11 个字符宽度.如果输入负数，则划分为右边窗口
+M- - C-x ^ 当前窗口高度减少
+C-x ^         当前窗口高度增加
+C-x  {    }     当前窗口左右增加或者减少
+M-x    windmove-up     windmove-up、 windmove-down、分别移动到上下左右窗口
+C-x +  使所有窗口都具有大致相同的尺寸
+C-x -   要缩小该窗口的大小（如果可能的话），可以运行 shrink-window-iflarger-than-buffer 功能
+M-x compare-windows  比较两个窗口的文件内容
+C-x C-= 增大字体
+C-x C--  减小字体
+C-x C-0 重置字体
+
+
+| 功能                               | 绑定      | 描述                                                                                                                                                      |
+|                                    |           |                                                                                                                                                           |
+|------------------------------------+-----------+-----------------------------------------------------------------------------------------------------------------------------------------------------------|
+| split-window-vertically            | C-x 2     | 从中间将当前窗口划分为两半，垂直地堆叠新的缓冲区。                                                                                                        |
+| switch-to-buffer-other-window      | C-x 4 b   | 垂直地将当前窗口划分为两半，提示输入缓冲 区以使用底部的窗口，并将其作为活动窗口。                                                                         |
+| display-buffer                     | C-x 4 C-o | 在另一个窗口中显示一个缓冲区，提示输入缓冲区以使用另一个窗口，但保持当前窗口为活 动窗口。（如果仅存在一个窗口，那么垂直地划分该窗口以显示另一个缓冲区。） |
+| find-file-other-window             | C-x 4 f   | 在新的缓冲区中打开新的文件，在新的垂直窗口中绘制它。                                                                                                      |
+| find-file-read-only-other-window   | C-x 4 r   | 在一个新的只读缓冲区中打开新的文件，在新的垂直窗口中绘制它。                                                                                              |
+| scroll-other-window                | C-M-v     | 滚动到下一个由C-x o切换到的窗口。                                                                                                                         |
+| scroll-all                         |           | 切换                                                                                                                                                      |
+| scroll-all                         |           | 次要模式。当它处于打开状态时，将同时滚动显示当前窗口中的缓冲区的所有窗口，并滚动均等的相应距离。                                                          |
+| other-window                       | C-x o     | 将光标移动到下一个窗口，并使其成为活动窗口。                                                                                                              |
+| windmove-up                        |           | 移动到恰好位于当前窗口上方的窗口，如果它存在的话。                                                                                                        |
+| windmove-down                      |           | 移动到恰好位于当前窗口下方的窗口，如果它存在的话。                                                                                                        |
+| windmove-left                      |           | 移动到恰好位于当前窗口左边的窗口，如果它存在的话。                                                                                                        |
+| windmove-right                     |           | 移动到恰好位于当前窗口右边的窗口，如果它存在的话。                                                                                                        |
+| delete-window                      | C-x 0     | 删除当前窗口，并将光标移动到使用 C-x o 将切换到的下一个窗口。                                                                                             |
+| delete-other-windows               | C-x 1     | 删除当前窗口之外的所有窗口。                                                                                                                              |
+| kill-buffer-and-window             | C-x 4 0   | 删除当前窗口，并剪切它的缓冲区。                                                                                                                          |
+| split-window-horizontally          | C-x3      | 将当前窗口从中间划分为两半，水平地堆叠新的缓冲区。                                                                                                        |
+| follow-mode                        |           | 切换follow次要模式。当它在缓冲区中处于打开状态时，将所有显示该缓冲区的窗口连接为一个较大的虚拟窗口。                                                      |
+| enlarge-window                     | C-x ^     | 使当前窗口增加一行的高度；在其之前使用一 个负数，将使得当前窗口减少一行的高度。                                                                           |
+| shrink-window-horizontally         | C-x }     | 使当前活动窗口减少一列的宽度。                                                                                                                            |
+| enlarge-window-horizontally        | C-x {     | 使当前活动窗口增加一列的宽度。                                                                                                                            |
+| shrink-window-if-larger-thanbuffer | C-x -     | 将当前活动窗口的大小缩小到对于它所包含的缓冲区来说可能的最小尺寸。                                                                                        |
+| balance-windows                    | C-x +     | 平衡所有窗口的尺寸，使它们的大小大致相等。                                                                                                                |
+| compare-windows                    |           | 将当前窗口与下一个窗口进行比较，在两个窗口中从光标处开始比较，并在两个缓冲区中将光标移动到第一个不同的字符处，直到到达缓冲区的末尾为止                    |
+
+
+
 *** 多窗口
+C-x 5 2    打开一个新的窗口
 M-x make-frame <Return>   打开一个新窗口
 M-x delete-frame <Return>  关闭选中的窗口
+C-x 5 o   移动到另外一个窗口
+C-x 5 0   删除当前窗口
+C-x 5 1   仅保留当前窗口
+
+| 功能                            | 绑定    | 描述                                                                                                 |
+| make-frame-command              | C-x 5 2 | 生成一个新的 Emacs 框架，并使其成为活动框 架。                                                       |
+| Switch-To-buffer-other-frame    | C-x 5 b | 在另一个框架中打开指定的缓冲区。如果不存 在其他框架，则创建一个新的框架。                            |
+| find-file-other-frame           | C-x 5 f | 在另一个框架中打开指定的文件。                                                                       |
+| find-file-read-only-other-frame | C-x 5 r | 在另一个框架中的只读缓冲区中打开指定的文 件。                                                        |
+| other-frame                     | C-x 5 o | 移动到下一个框架，并使其成为活动框架。                                                               |
+| delete-frame                    | C-x 5 0 | 删除当前框架，并使下一个框架成为活动框 架                                                            |
+| delete-other-frames             | C-x 5 1 | 删除当前框架之外的所有框架                                                                           |
+| iconify-or-deiconify-frame      | C-z     | 图标化当前框架。如果该框架已经图标化了， 那么取消它的图标化。（在控制台中，这个绑 定将挂起 Emacs。） | 
+
+
+
 ** 获取帮助
 c-h c 命令   获取命令的最基本帮助
 C-h k          获取命令的详细信息
@@ -155,6 +247,8 @@ C-h m                               查看当前mode的文档
 
 
 * org-mode
+org-mode全帮助文档
+http://orgmode.org/manual/
 org-mode 新手文档
 http://orgmode.org/worg/org-tutorials/org4beginners.html#orgheadline3
 ** 快捷键
@@ -205,9 +299,31 @@ C-c .                 加入时间，如 :: <2017-02-27 周一>
 1. 在文件中配置
    在文件的开头加入如下内容，TODO IN-PROGRESS WAITING DONE  可自行替换
 =#+TODO: TODO IN-PROGRESS WAITING DONE=
+#+SEQ_TODO: NEXT(N)
 2. 在emacs配置文件中加入一下内容，将会在所有的org文件中生效
 (setq org-todo-keywords
  '((sequence "TODO" "IN-PROGRESS" "WAITING" "DONE")))
+** 插入示例
+在org-mode中插入代码块的方法
+s	#+BEGIN_SRC ... #+END_SRC 
+e	#+BEGIN_EXAMPLE ... #+END_EXAMPLE
+q	#+BEGIN_QUOTE ... #+END_QUOTE 
+v	#+BEGIN_VERSE ... #+END_VERSE 
+c	#+BEGIN_CENTER ... #+END_CENTER 
+l	#+BEGIN_LaTeX ... #+END_LaTeX 
+L	#+LaTeX: 
+h	#+BEGIN_HTML ... #+END_HTML 
+H	#+HTML: 
+a	#+BEGIN_ASCII ... #+END_ASCII 
+A	#+ASCII: 
+i	#+INDEX: line 
+I	#+INCLUDE: line #+BGIN_SRC python
+例如，在一个空行中，输入"<e"然后按TAB键，就会自动补全
+#+BEGIN_SRC python
+print('hello')
+
+#+END_SRC
+
 * elisp
 学习elisp语法
 https://learnxinyminutes.com/docs/elisp/
@@ -220,4 +336,60 @@ http://emacs.sexy/#learn
 在el文件中，按C-x C-e 执行函数
 ** lisp语法
 （+ 2 2） +后需有空格，表示2+2
+
+
+
+* elpy
+** 快捷键
+C-up down 在python模式中，光标在同一等级的两行间跳转，如变量和变量，函数和函数
+C-lef right   缩进层次的左右跳转，如一次跳转一个tab
+M-up  down    将当前行移动上面或者下面
+M-lef  right  将代码左右缩进
+
+*** project 
+C-c C-f (elpy-find-file)
+C-c C-s (elpy-rgrep-symbol)
+
+M-x elpy-set-project-root  
+elpy-project-ignored-directories
+
+M-TAB (elpy-company-backend)  补全，输入代码自动补全，使用M-n M-p选择函数,使用C-d或者f1可以查看函数信息
+
+*** Navigation
+C-c C-o (elpy-occur-definitions)  在新窗格中列出当前文件的所有类和函数
+M-. (elpy-goto-definition)        跳转到当前光标的函数的定义的位置
+C-x 4 M-. (elpy-goto-definition-other-window)  在另一个窗口中打开当前光标的函数定义所在的位置
+M-* (pop-tag-mark)                返回使用M-.跳转的前一个位置,elpy未设置，需要手动绑定
+*** Interactive Python
+C-c C-z (elpy-shell-switch-to-shell)  打开一个pythonshell
+C-c C-c (elpy-shell-send-region-or-buffer)  将选中的代码发到shell中执行，如果没有选中，则发送整个缓冲区的代码
+
+C-c RET (elpy-shell-send-current-statement)  将当前代码无缩进发送到shell
+*** 函数检查
+C-c C-n (elpy-flymake-next-error)  下一个检查错误
+C-c C-p (elpy-flymake-previous-error)  上一个检查错误
+C-c C-v (elpy-check)                   函数检查,在另一个窗口中显示所有检查结果
+
+*** 文档
+C-c C-d (elpy-doc)    当光标在一个函数上时，在另一个窗口中打开这个函数的doc说明
+
+*** 测试
+
+C-c C-t (elpy-test)   调用python的单元测试框架测试代码，需写有测试代码
+M-x elpy-set-test-runner  This changes the current test runner. Elpy supports the standard unittest discovery runner, the Django discovery runner, nose and py.test. You can also write your own, as described in Writing Test Runners.
+
+*** 重构
+C-c C-e (elpy-multiedit-python-symbol-at-point) 高亮所有和光标所在代码的同名变量，此时可以批量对变量重命名.使用C-x n d可以筛选和显示所欲符合条件的代码
+
+C-c C-r f (elpy-format-code)  格式化代码,确保已经pip安装了yapf或者autopep8，并且确保已经将python安装目录下的Python36\Scripts工具目录添加到path环境变量中
+C-c C-r  r  a             重命名当前文件的package名称
+C-c C-r i (elpy-importmagic-fixup)  导入新的包，并且移除没有用到的包
+C-c C-r r (elpy-refactor)    Run the Elpy refactoring interface for Python code
+** Django
+C-c C-x c (elpy-django-command)  Choose what command you’d like to run via django-admin.py or manage.py.
+C-c C-x r (elpy-django-runserver)  Start the development server command, runserver. Default arguments are 127.0.0.1 for ip address and 8000 for port. These can be changed via elpy-django-server-ipaddr and elpy-django-server-port
+** Profiling
+M-x elpy-profile-buffer-or-region Send the current buffer or region to the profiler and display the result with elpy-profile-visualizer
+
+
 

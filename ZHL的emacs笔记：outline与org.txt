@@ -1,0 +1,531 @@
+
+本文档是"ZHL的emacs笔记"的一部分。
+
+本文档的格式是为了快速检索与浏览而专门调整的，最好用emacs来查看，将tab
+缩进显式设为3个字符，设置不自动换行，并使用outline模式，以提高学习和工
+作效率。具体配置可参考文档"ZHL的emacs笔记：配置小技巧"。
+
+本文档讲述的是emacs中的outline模式和org模式，包括功能描述、配置方法以及
+命令索引，当然，主要是本人在使用过程中所关注的细节以及积累的经验。
+
+希望本文档能给emacs同好一些帮助，任何问题或建议可以发信到 seaxii@126.com 来讨论。
+
+文档正文----------------------------------------------------------------
+
+**文本相关：outline模式、Org模式、View模式、文件比较、text模式、fill模式、Abbrev模式、Picture模式、2C模式。
+	**outline模式：大纲模式。
+		说明：1、大纲模式对于书写长篇大论很有帮助，它提供两个主要功能：a.在标题(heading)之间跳转，便于快速移动；b.基于标题折叠(展开或隐藏)正文(body)及子标题，便于管理文档的布局结构。
+			2、其核心是确定哪一行是标题，以及标题的级别，那么在两个标题之间的内容即为正文，而子标题应当从属于父标题。变量 outline-regexp 保存的正则表达式用于匹配识别标题及其级数，默认的，是以行首是否有星号及其数量来判断其是否为标题及其级数。
+			3、大纲模式既可以是主模式，也可以做为辅模式伴随其它主模式一起使用，二者的区别不大；做为辅模式时其组合键的前辍为 C-c @ ，而主模式的相对简单一些为 C-c ，可以通过更改变量 outline-minor-mode-prefix 来改变辅模式的前辍。一般情况下使用辅模式即可。
+			4、有折叠时要注意以下情况：
+				a.如果移动了一个标题而这个标题带有隐藏的小标题和相关文本，那么所有被隐藏起来的东西也会随着可见文本的移动而移动。
+				b.如果删除了一个标题，它下面隐藏的文本也将被删除掉。
+				c.如果删除了某个标题后面的省略号，那么相关的被隐藏文本就会被删除，为了避免误操作，不要这样做。同样的，也不要在省略号上进行输入。
+				d.如果想把隐藏着的文本移动到另外一个编辑缓冲区里，这两个编辑缓冲区就必须都在大纲模式下。
+			5、具体配置的例子参见"emacs配置小技巧"第[[67]]。
+		变量 outline-regexp :该变量保存了一个正则表达式用于匹配每行行首以确定其是否是一个标题行，匹配时自动从行首开始，所以不需符号 ^ ，匹配到的字符串长度(tab符及空格等也要算长度)决定了标题的级数(级别)，默认值为 [*\f]+ ，意为若行首有一个*或\f(分页符)则为一级标题，有两个*或/和\f则为二级标题，依次类推。该值可以根据情况自定义，比如针对本文档的我的定义是 "\\[\\|\t*[*\f]\\{2,\\}" 。该变量默认修改的是全局值，既使在某模式的勾子中用 setq 函数也不会产生本地值，为了能在不同模式中使用不同配置，可以在某模式的勾子中强行生成本地值，如： (set (make-local-variable 'outline-regexp) "\\[\\|\t*[*\f]\\{2,\\}") 。不同缓冲可以同时使用 outline-regexp 的不同的本地值，比如使用大纲辅模式的缓冲和使用Org模式的缓冲。
+		outline-mode :进入大纲主模式，模式名处显示 Outline 。
+		outline-minor-mode :打开大纲辅模式，辅模式名处显示 Outl 。
+		变量 outline-minor-mode-prefix :该变量保存了大纲辅模式的组合键前辍，默认值为 C-c @ ，可以通过在大纲辅模式初始化(/装入)之前(这点很重要)设置该变量值来改变大纲辅模式的组合键前辍，比如：(setq outline-minor-mode-prefix [(control c)]) 。
+		C-c RET		outline-insert-heading :插入一个与当前标题相同深度的标题行。若光标当前在一个标题行行首，则在该标题行前面插入；否则，在当前行后插入；或者当前为空行则在当前行插入。
+		C-c C-n		outline-next-visible-heading :移动到下一个可见的标题处。
+		C-c C-p		outline-previous-visible-heading :移动到上一个可见的标题处。
+		C-c C-f		outline-forward-same-level :移动到同级的下一个标题处，将跨过子标题，但必须在同一个父标题下。
+		C-c C-b		outline-backward-same-level :移动到同级的上一个标题处，将跨过子标题，但必须在同一个父标题下。
+		C-c C-u		outline-up-heading :移动到父标题处。
+		C-c C-t		hide-body :折叠缓冲区内所有正文。
+		C-c C-q		hide-sublevels :折叠缓冲区内所有正文及子标题，仅显示一级标题。带数字参数则指明显示几级子标题，显示时所有正文均保持折叠。
+		C-c C-a		show-all :打开缓冲区内所有折叠。
+		C-c C-l		hide-leaves :折叠当前标题及其各级子标题下的未折叠正文，即只显示骨架。
+		C-c C-d		hide-subtree :隐藏当前标题下的正文及其子标题，即只剩当前标题。
+		C-c C-s		show-subtree :显示当前标题下的正文及其子标题，即显示全部。
+		C-c C-k		show-branches :显示当前标题下的各级子标题，而所有正文均保持折叠，即只显示骨架。
+		C-c C-i 或 C-c TAB		show-children :显示当前标题下的直接(一级)子标题，正文及间接子标题都保持折叠。带数字参数则指明显示几级子标题，显示时所有正文均保持折叠。
+		C-c C-c		hide-entry :折叠当前标题下的正文，子标题不受影响。
+		C-c C-e		show-entry :显示当前标题下的正文，子标题不受影响。
+		C-c C-o		hide-other :Hide everything except current body and parent and top-level headings.
+		C-c @		outline-mark-subtree :为当前标题(光标可处于当前标题或正文上)及其子标题的所有文档设置标记，光标(point)将置于当前标题行的行首，而标记(mark)设置在这棵树的末尾。
+		C-c C-<		outline-promote :将当前子树提高一级，即深度减一，注意是子树中的各级子标题均提高一级，而各级内容没有变化。若有当前选中区域，则操作的是当前选中区域。该功能的前提是正确配置了变量 outline-promotion-headings ，其应指定一个有序的标题行首的列表，分别指定了各级标题，那么在升/降级时按这个列表来变换标题行首，其默认值为 nil 。
+		C-c C->		outline-demote :将当前子树降低一级，即深度加一。
+		C-c C-^		outline-move-subtree-up :当前子树移动到上一个同级子树前。针对当前自己设置的标题匹配串工作的不正常，计算级数有问题。
+		C-c C-v		outline-move-subtree-down :当前子树移动到下一个同级子树后。
+		TAB		outline-cycle :这个命令是由第三方包 outline-magic.el 提供的，实现了大纲模式下在几种显示方式之间的快速切换。具体的，当光标处于缓冲区开头或使用了前导参数 C-u 时，将针对整个缓冲区在以下三种显示方式间切换：a.全局(OVERVIEW)，只显示一级标题；b.骨架(CONTENTS)，显示各级标题而折叠所有正文；c.正常(SHOW ALL)，展开所有内容。当光标处于一个标题行开头时，将针对当前标题所在子树在以下三种显示方式间切换：a.折叠(FOLDED)，只显示当前标题行；b.孩子(CHILDREN)，显示当前标题和正文以及其下的一级子标题；c.子树(SUBTREE)，将完全展开当前标题所在子树。当光标既不处于缓冲区开头也不处于标题行开头时，其行为由变量 outline-cycle-emulate-tab 控制，默认值为 nil ，表示按 TAB 会将光标移至当前所在标题的标题行行首，为 t 则表示会模拟 TAB 键本意(执行当前行缩进)，为 white 则表示只在空行时会模拟 TAB 键本意。
+	**org-mode：Org模式。
+		**说明：1、从emacs-22开始，Org模式已经集成进了emacs发行版，当然，也可以从其官网(http://orgmode.org/)下载最新版本使用。
+			2、Org模式具有强大的功能，其首先是一个文档结构化管理和编辑的工具，其次是一个任务/项目计划管理的工具，同时又是一个轻量级标记语言，而且可以将内容进行导出和发布，总之，非常强大(且流行)。
+			3、Org模式建立在outline模式之上，其各种功能都是以对内容进行高效的组织(organization)为基础的。
+			4、Org模式的工作对象为纯文本文件，扩展名通常指定为 .org ，当打开扩展名为 .org 的文件时自动进入Org模式。
+		**配置：1、最初使用时发现，进入Org模式时总是会连带打开 outline-minor-mode ，并且其标题行匹配模式 outline-regexp 也不对，导致工作不正常，而若不带用户初始化配置文件启动emacs的话就没有问题。
+			2、查看代码知，主模式 org-mode (用函数 define-derived-mode 来定义)(lisp/org/org.el)派生于主模式 outline-mode (lisp/outline.el)，而 outline-mode 又派生于主模式 text-mode (lisp/textmodes/text-mode.el)。
+			3、由于有这种继承关系，所以在文本模式的勾子函数中对 outline-regexp 所做设置及打开大纲辅模式，统统也作用到了Org模式中。
+			4、可以在文本模式的勾子函数中判断当前主模式，以进行有针对性的设置，从而避免不当设置传递到Org模式中，具体参见下面对"变量 text-mode-hook"的描述。
+			5、关于Org模式的具体配置，参见"emacs配置小技巧"第[[A2]]。
+		**杂项：
+			org-version :查看版本。
+			org-iswitchb :类似于 iswitchb 风格的，用于只在Org缓冲区之间切换的命令。这是一个全局可用的命令。
+			C-c C-x ;		org-timer-set-timer :启动一个定时器，超时后会在回显区有提示。该命令不会改变任何东西。
+			C-c C-x !		org-reload :Reload all org lisp files. 带前导参数则 load the uncompiled versions.
+		**结构化编辑：基于outline模式。
+			Org模式会将 outline-regexp 的本地值改为"\\*+ "，所以Org模式中的标题行必须以*号开头且在*号后有一个空格才被看作是标题行，空格必不可少。由于一些特性的限制，要注意Org模式中的 outline-regexp 的值不应手工修改。
+			变量 org-hide-leading-stars :Org模式的标题行都以*号开头，各级标题间的层级关系看起来不太直观，若将该变量设为non-nil(默认值为nil)，则会将标题行开头的*号隐藏起来(只显示最后一个)，这样标题行有种缩进的感觉，层级关系看起来就更明确一些。隐藏起来的*号其实都在，只是通过设置其字型(face)使其颜色与背景色相同而已。这个字型由变量 org-hide 指定，若背景色不是纯白或纯黑，则可能需要显式设置 org-hide 的值才能达到隐藏效果。修改 org-hide-leading-stars 后需要重启 font-lock-mode 才能显现出效果。
+			org-indent-mode :该子模式(模式行显示 Ind 辅模式)能将每个标题的内容依据标题的深度进行缩进，使之看起来更舒服一点。注意只是在显示上做了调整，对实际内容并无改变。变量 org-startup-indented 控制了启动时该子模式是否打开，默认为 nil 。实验知，打开该模式后有可能造成命令 org-end-of-line 的行为不正常(长行无法自动水平滚动)。
+			TAB		org-cycle :该命令的行为与 outline-cycle 几乎一样，也是不带参数时会将当前标题所在子树在三种显示方式间切换，带前导参数 C-u 时会将整个缓冲在三种显示方式间切换，具体参见对 outline-cycle 的描述。唯一不同的是，当光标不在标题行时，按 TAB 键有可能执行的是缩进当前行，这由变量 org-cycle-emulate-tab 控制，参见下面描述。
+			变量 org-cycle-emulate-tab :其指明了当光标不在标题行时按 TAB 键的行为，是缩进当前行(即模拟了正常 TAB 键所绑定的功能)还是将当前所在标题在三种显示方式间切换。默认值为 t ，表示只要不在标题行就执行缩进；为 exc-hl-bol 表示只要不在标题行行首就执行缩进；为 white 表示只在空白行执行缩进；为 whitestart 表示只在非标题行行首(非空白字符前)执行缩进；为 nil 表示绝不执行缩进。
+			S-TAB		org-shifttab :与执行带前导参数 C-u 的 org-cycle 等价，即会将整个缓冲在三种显示方式间切换。
+			变量 org-startup-folded :该变量控制了Org文件打开时以何种折叠状态显示。默认值为 t ，表示折叠到一级，设为 content 则显示骨架，设为 nil 则不折叠。
+			M-RET		org-meta-return :调用 org-insert-heading 插入一个与当前标题相同深度的标题行(非任务)。若光标当前在一个标题行行首，则在该标题行前面插入；否则，在当前行后插入；或者当前为空行则在当前行插入。
+			C-RET		org-insert-heading-respect-content :与 org-insert-heading 功能一样，不同点在于其会在当前标题内容(包括子标题)后插入新标题行。
+			C-c RET		org-ctrl-c-ret :调用 org-insert-heading 。
+			M-LEFT		org-metaleft :当光标当前处于一个标题行时，调用 org-do-promote 将当前标题行的深度减一(提高一级)，即去掉一个*号；当光标处于一个普通行上时，执行其原本的 backward-word 动作。
+			M-RIGHT		org-metaright :当光标当前处于一个标题行时，调用 org-do-demote 将当前标题行的深度加一(降低一级)，即添加一个*号；当光标处于一个普通行上时，执行其原本的 forward-word 动作。
+			M-S-LEFT		org-shiftmetaleft :当光标当前处于一个标题行时，调用 org-promote-subtree 将当前子树提高一级，注意是子树中的各级子标题均提高一级，即都去掉一个*号；当光标处于一个普通行上时，其什么也不做。
+			M-S-RIGHT		org-shiftmetaright :当光标当前处于一个标题行时，调用 org-demote-subtree 将当前子树降低一级，注意是子树中的各级子标题均降低一级，即都添加一个*号；当光标处于一个普通行上时，其什么也不做。
+			变量 org-odd-levels-only :其控制在 outline 时是否只使用奇数级。其会导致对标题升/降级时一次使用两个*号，也会影响导出时处理的级数。
+			M-UP		org-metaup :其根据上下文环境调用 org-move-subtree-up 或 org-move-item-up ，具体的说就是，当光标当前处于一个标题行时，会将当前子树与上面紧邻的同级子树交换一下位置，若上面没有相邻的同级子树则什么也不做；当光标处于一个普通行上时，会将当前行与上一行(不管是什么行)交换一下位置。
+			M-DOWN		org-metadown :其根据上下文环境调用 org-move-subtree-down 或 org-move-item-down ，具体的说就是，当光标当前处于一个标题行时，会将当前子树与下面紧邻的同级子树交换一下位置，若下面没有相邻的同级子树则什么也不做；当光标处于一个普通行上时，会将当前行与下一行(不管是什么行)交换一下位置。
+			M-S-UP		org-shiftmetaup :等价于命令 org-move-subtree-up 。
+			M-S-DOWN		org-shiftmetadown :等价于命令 org-move-subtree-down 。
+			C-a		org-beginning-of-line :去行首。
+			C-e		org-end-of-line :去行尾。变量 org-special-ctrl-a/e 能控制其在标题行上的特殊行为，其默认值为 nil 。特别的，发现该命令在截短行(truncate-lines)上的行为是去到截短处，然后刷屏使光标处于水平中央，这个行为很适合浏览长行文本。实验知，打开缩进模式(org-indent-mode)后有可能造成该命令的行为不正常(长行无法自动水平滚动)。
+			C-c C-n		outline-next-visible-heading
+			C-c C-p		outline-previous-visible-heading
+			C-c C-f		org-forward-same-level
+			C-c C-b		org-backward-same-level
+			C-c C-u		outline-up-heading
+			C-c C-j		org-goto :这是一个非常实用的基于大纲的快速定位方法。首先将整个缓冲除当前标题树外的其它标题都折叠到一级，即给出一个临时的总纲，然后可以按 UP/DOWN 在标题间移动，按 TAB 来展开或折叠子标题，按 / (org-occur)来列出匹配，或直接输入字串来递增查找，当确定好位置后，按 RET 来结束操作，则光标将定位到指定位置，该位置所在的标题树将展开，而其它标题树都将恢复到执行操作前的状态(而不是总纲状态)。如果取消操作(C-g)，则缓冲将恢复到执行操作前的状态(而不是总纲状态)，光标也会回到执行操作前的位置。变量 org-goto-auto-isearch 控制是否自动处于搜索状态，默认为 t ，即输入字符将立即搜索，也可以设为 nil (应在全局设置)，这样有一些字符快捷键可以工作： n/p/f/b/u/q 。
+			C-c C-r		org-reveal :显示上下文，包括当前标题及其层级结构，以及其后同级标题(sibling)。这个功能很有用，有时会只显示某级标题的内容，而将其它所有内容都隐藏，比如在折叠状态下进行搜索或执行了 hide-other 命令等，这样就失去了层级结构做参考，而该命令正是能帮助重新展开层级结构。特别的，若其带上前导参数，则会将后面所有同级标题都列出(而不是只列出一个)。该命令也可以用于outline模式中，但用几次可能导致emacs崩溃，还是别用。后来，为outline写了一个相同功能的函数，参见 zhl-outline-reveal 。
+			C-c C-x C-w		org-cut-special :调用 org-cut-subtree 剪切当前子树。内容放于删除环中。数字参数指明后续指定数量的子树也被剪切。
+			C-c C-x M-w		org-copy-special :调用 org-copy-subtree 复制当前子树。内容放于删除环中。数字参数指明后续指定数量的子树也被复制。
+			C-c C-x C-y		org-paste-special :调用 org-paste-subtree 粘贴子树。是从一个特殊的位置取得的剪切/复制的子树内容，且粘贴时会自动调整子树的等级以适应粘贴点的等级。亦可以用普通方法从删除环中取得子树内容。
+			C-c C-x c		org-clone-subtree-with-time-shift :复制当前任务子树并提示数量和时间间隔，然后插入指定数量的同级复本到当前子树后。如果当前任务中有时间戳并且指定了合法的时间间隔，则各个复本里的时间戳会按时间间隔依次增长，这是另一种构造重复任务的方法，参见下面对"重复任务"的描述。
+			C-x n s		org-narrow-to-subtree :只显示当前子树，其它都隐藏。
+			C-x n w		widen :将隐藏的部分都显示出来。
+			C-c *		org-ctrl-c-star :调用 org-toggle-heading 将当前行在普通行与标题行间变换。其亦可操作一个选中区域。
+			C-c /		org-sparse-tree :这是建立 sparse tree 的入口命令，还需输入后续子命令。其功能是搜索并只显示那些具有某些特性的条目，其它条目都折叠起来。
+			orgstruct-mode :可以将该部分功能以子模式的方式应用在其它主模式中。亦可配置： (add-hook 'mail-mode-hook 'turn-on-orgstruct) 。
+		**轻量级标记语言：
+			Org现在已经成为一种专门的轻量级标记语言，与Markdown、reStructedText、Textile、RDoc、MediaWiki等并列。
+			相对于重量级标记语言，如 html 、 xml 等，轻量级标记语言的语法简单，书写容易，即使不经过渲染，也可以很容易阅读，其用途越来越广泛。
+			**强调(Emphasis)：
+				*bold*                   ：*粗体*
+				/italic/                 ：/斜体/
+				_underlined_             ：_下划线_
+				+strike-through+         ：+删除线+
+				=code=                   ：其内容不被语法解释，将会逐字输出。
+				~verbatim~               ：其内容不被语法解释，将会逐字输出。
+			**注释(Comment)：注释不会被输出。
+				以 # 开头的行都是注释。
+				缩进的行可用"#+ "来注释掉。
+				整个子树可以在标题行开头加关键字 COMMENT 来注释掉。
+				括在 #+BEGIN_COMMENT 和 #+END_COMMENT 中的内容都被注释掉。
+				C-c ;		org-toggle-comment :翻转当前标题的注释状态，即增/删标题行开头的关键字 COMMENT 。
+			**超级链接：链接有很多种类型。
+				**对于符合链接规则(URL-like)的正常文本，Org模式会自动将其解释为链接，包括网页、文件、新闻组、邮箱、等等，下面是一些例子：
+					http://www.astro.uva.nl/~dominik          on the web
+					file:/home/dominik/images/jupiter.jpg     file, absolute path
+					file:papers/last.pdf                      file, relative path
+					id:B7423F4D-2E8A-471B-8810-C40F074717E9   Link to heading by ID
+					news:comp.emacs                           Usenet link
+					mailto:adent@galaxy.net                   Mail link
+					gnus:group                                Gnus group link
+					gnus:group#id                             Gnus article link
+					info:org                                  Info node link
+					[[info:org:External links]]               如果链接字串中有空格，那么自动分析出的链接会是不完整的，对于这种链接只有写成显式链接才能正常跳转。
+					[[info:org:External%20links]]             包含空格的显式链接中的空格可能会被编码成 %20 。实验知，编不编码都能正常跳转。
+					[[shell:ls *.org]]                               执行一个shell命令
+					elisp:org-agenda                                 交互式执行一个Elisp命令
+					[[elisp:(find-file-other-frame "Elisp.org")]]    对一个Elisp表达式求值
+					也可自定义新的链接规则，比如针对man手册页，具体参考[[info:org:Adding hyperlink types]]。
+					当然，链接也可显式指定，如下面描述，其好处是可将链接显示成一个描述字串，而隐藏链接本身的地址值。
+				**外部链接：如前所述，可以是各种常见的链接形式，比如一个网址，等等，其形式如下：
+					[[link][description]] 或 [[link]]
+					当输入最右边方括号后，链接字串将消失，而只显示其描述。当然，光标在链接最后按 BACKSPACE 时会删除最右边方括号，完整的链接字串又会显现出来。
+					当打开一个外部链接时，emacs将调用适当的应用，比如浏览器，等等，来打开此链接。
+				**本地文件链接：指本地文件系统中某个文件内的某个位置。
+					org-store-link :将光标当前位置转化为一个本地文件链接后保存到变量 org-stored-links (是个列表)中，那么其后可以将这个链接插入(org-insert-link)到其它文件中以方便跳转。常将其绑定到一个全局键上以方便使用。
+					变量 org-link-to-org-use-id :该变量控制在保存本地文件链接时是否使用入口ID(entry ID)。入口ID是指标题下的ID属性，当变量 org-link-to-org-use-id 为non-nil时，在保存本地文件链接时有可能会自动为当前标题增加一个ID属性(如果没有的话)，然后，保存的本地文件链接即为该ID值。变量 org-link-to-org-use-id 可取的值有很多，其默认值为 create-if-interactive-and-no-custom-id ，表示当标题下没有 CUSTOM_ID 属性时才创建 ID 属性，否则不创建，其它可取值参考帮助。变量 org-link-to-org-use-id 只在模块 org-id 装入后才会起作用，否则保存本地文件链接时不会考虑ID属性。列表变量 org-modules 指明了都有哪些模块在装入 org.el 时被连带装入，其默认没有加载 org-id 。当然，在使用过程中也可以手工加载 org-id 模块，执行 (require 'org-id) 即可。
+					变量 org-keep-stored-link-after-insertion :该变量的意义在于，保存在变量 org-stored-links 中的本地文件链接被使用(org-insert-link)后，其是否依然保存在变量 org-stored-links 中。默认值为 nil ，即链接使用后就被移除。
+					本地文件链接亦可手工输入，其就是一个协议前辍为 file: 的外部链接，链接地址是一个本地文件(相对或绝对路径都可)，而且可以在文件名后用 :: 加定位符的方式来指定文件的特定位置，其中定位符可以是行号或搜索字串等。如：
+						[[file:~/code/main.c::255]]           进入到 255 行。
+						[[file:~/xx.org::My Target]]          查找目标字串 <<My Target>> 或 My Target (如果前者不存在的话)。
+						[[file:~/xx.org::*My Target]]         在标题行中查找字串 My Target 。
+						[[file:~/xx.org::/regexp-string/]]    进行正则表达式查找，其实是利用 occur / org-occur 来列出匹配表。
+						[[file:::find me]]                    不指定文件名则在当前文件中查找，等价于内部链接 [[find me]] 。
+				**内部链接：如果链接值看起来不象一个URL，则认为它是一个内部链接，即本文件内的某个位置。
+					**锚点：
+						定义锚点： <<my-anchor>>
+						定义内部链接： [[my-anchor][description]] 或 [[my-anchor]]
+											[[*My Target][Find my target]] 或 [[*My Target]]
+						锚点常放于注释行中，类似于这样： # <<My Target>> ，前面的 # 并不是锚点的一部分。
+						锚点在 HTML export 时将产生HTML命名锚点(named anchors)。
+						对于内部链接的跳转，其实就是一个查找文本串的过程：
+							首先查找锚点，即查找双尖括号(double angular brackets)( << 和 >> )括起待查文本串所形成的字串。
+							若找不到锚点，则直接查找待查文本串。
+							如果待查文本串以 * 开头，则查找限定在标题行中。
+							在进行文本串查找时，先尝试精确匹配(exact match)，找不到的话再进行宽泛匹配(lenient searches)(比如说，大小写不同，或单词间有其它符号等，都能匹配上)。
+					**id：
+						[[#my-custom-id]]
+						跳转到属性 CUSTOM_ID 的值为 my-custom-id 的入口处。
+						这种属性在 HTML export 时将产生 section links 。
+					**脚注：可以看作是一种特殊的内部链接，但要求具有"fn:"前缀。
+						定义脚注： [fn:my-footprint]
+						脚注链接： [[fn:my-footprint][description]] 或 [[fn:my-footprint]]
+						注意：针对脚注打开链接(org-open-at-point)是可以正反两方向跳转的。
+					**广播目标(radio target)：导致自动形成链接。
+						定义radio target： <<<My Target>>>
+						radio target 是一种由三尖括号(triple angular brackets)( <<< 和 >>> )形成的特殊锚点，针对这种锚点，正常文本(normal text)如果与其匹配，则系统自动将匹配文本解释成一个链接，因而无需再手工为这种锚点构造链接了。
+						当Org文件装入时，系统会自动为 radio target 进行一次扫描，并将所有匹配串(正常文本)解释成链接。在编辑过程中也可手动触发扫描过程，只需将光标置于一个 radio target 上并执行 C-c C-c (org-ctrl-c-ctrl-c)命令即可。
+						radio target 提高了形成链接的效率。
+				**通用命令：
+					C-c C-l		org-insert-link :在光标当前位置插入一个链接，其会提示输入链接地址与描述，并有补齐(提示协议前辍等)和历史(保存在变量 org-stored-links 中的链接可被翻出，直接回车则使用最后一条保存的链接)。由于空格键被用于补齐，所以得用 M-SPC 或 C-q SPC 来插入空格。如果光标当前正处于一个现有链接上，则该命令用于修改这个链接的地址与描述。如果指定了 C-u 前辍，则该命令用于插入一个本地文件链接，会提示输入本地文件并有补齐，而链接中保存的文件路径有可能使用相对于当前文件目录的相对路径，若想保存绝对路径，则使用 C-u C-u 前辍。
+					C-c C-o		org-open-at-point :打开光标所在或后面(当前行以内)的链接。一般本地文件链接会在当前emacs中直接打开，其它外部链接则调用适当的应用去打开，具体由变量 org-file-apps 控制。若指定命令前辍 C-u 则表示强制只由当前emacs打开，而指定 C-u C-u 则表示强制避免由当前emacs打开(即只使用其它应用去打开)。
+					C-c &		org-mark-ring-goto :回跳。Org模式维护自己的标记环(mark ring)，在进行链接跳转时都会将旧位置压入标记环中。
+					C-c %		org-mark-ring-push :当前位置入栈。在进行链接跳转时会自动执行该动作。
+					C-c C-x C-n		org-next-link :光标移动到当前缓冲中的下一个链接处。到头会循环。
+					C-c C-x C-p		org-previous-link :光标移动到当前缓冲中的上一个链接处。到头会循环。
+					org-insert-link-global :该命令可在任何模式的缓冲中插入一个符合Org模式语法的链接，其行为与Org模式中的 org-insert-link 命令基本一样。常将其绑定到一个全局键上以方便使用。
+					org-open-at-point-global :该命令可在任何模式的缓冲中打开光标所在的链接，其行为与Org模式中的 org-open-at-point 命令基本一样。注意其针对正常文本的链接也能跳转，而不必限定在显式的符合Org模式语法的链接上。常将其绑定到一个全局键上以方便使用。例如在如下链接上执行该命令即可打开对应的info帮助：[[info:org:Using links outside Org]]。
+					org-open-link-from-string :提示输入一个链接然后打开之。
+			**标签(tag)：一种绝好的作用于标题行的交叉关联(cross-correlating)的方法。
+				标签处于标题行最后，名字可由字母、数字、 _ 和 @ 组成，并且名字前后都得有一个冒号(:)，而一个标题行可以指定多个标签，比如： :work:urgent: 。
+				标签能够继承，即子标题将自动拥有父标题所具有的标签。可以加入类似 #+FILETAGS: :Peter:Boss:Secret: 的行以使当前文件中所有标题都具有这几个标签。
+				变量 org-use-tag-inheritance 为 nil 表示不继承标签，默认为 t 表示继承，亦可以指定一个标签列表或一个正则表达式来明确都有哪些标签可以继承。
+				变量 org-tags-exclude-from-inheritance 可指定一个明确的不能被继承的标签列表，默认值为 nil 。
+				C-c C-q		org-set-tags-command :为当前标题指定标签，只需输入标签名即可，系统会自动加上两头的冒号并对齐该标签。如果带上 C-u 前辍，则该命令仅是将文件内所有标签都对齐。
+				C-c C-c		org-ctrl-c-ctrl-c :当光标处于一个标题行时其等价于 org-set-tags-command 命令。
+					变量 org-tags-column :控制标签如何对齐。为正数时指定标签开始的列，为负数时指定标签右对齐(flushright)的列。
+				C-c \ 或 C-c / m		org-match-sparse-tree :使得当前缓冲只显示具有指定标签/属性的标题，其它标题都折叠起来。如果带上 C-u 前辍，则忽略非 TODO 条目。
+				**标签/属性匹配：[[info:org:Matching tags and properties]]
+					标签/属性的匹配语法很丰富，具体可参考帮助，只需理解逻辑符号 & 和 | ，以及正负号 + 和 - 表示取与不取。
+					+work-boss          表示匹配上具有标签work同时没有标签boss的标题行。其实中间省略了 & 。
+					work|laptop         表示匹配上具有标签work或laptop的标题行。
+					work|laptop+night   表示匹配上具有标签work或同时具有标签laptop和night的标题行。
+					ID="i"              表示匹配上ID属性值为 i 的条目。
+			**属性：[[info:org:Properties and Columns]]
+				抽屉(Drawers)的概念：有时想为一个入口/标题保留一些关联信息，但平时又不想看到这些信息，则可以用抽屉来达此目的。抽屉名是一些关键字，由变量 org-drawers 列出，比如 PROPERTIES 。在标题内由 :DRAWERNAME: 和 :END: 起止的内容即为一个抽屉，其在Org模式中被特殊处理，平时都处于折叠状态且不参与上级的折叠/展开操作，只有光标处于其上时才能展开之。
+				可以通过为任务设置某些属性而影响对该任务操作时的具体行为。
+				C-c C-x p		org-set-property :为当前标题设置一个属性及其值。有自动补齐。若没有 property drawer 则先自动添加一个。
+				org-insert-property-drawer :为当前标题添加一个 property drawer 。
+				C-c C-c		org-ctrl-c-ctrl-c :当光标处于一个 property drawer 上时，执行属性的增/删/改操作，需要输入后续命令。
+				S-LEFT / S-RIGHT		org-shiftleft / org-shiftright :当光标处于一个属性上时，切换该属性所允许的值。
+				关于按属性搜索(/过滤)，参见前面对标签的描述。另外，命令 C-c / p 是专门针对属性进行搜索的，其会提问属性名及其值。
+			**表格编辑(table editor)：info:org:Tables
+				orgtbl-mode :可以将该部分功能以子模式的方式应用在其它主模式中。亦可配置： (add-hook 'mail-mode-hook 'turn-on-orgtbl) 。
+			**附件(Attachments)：相当于一个外部链接，但会作为本地文件进行发布。
+				附件是与任务关联的，每个任务可指定多个附件。指定了附件的任务会被自动加上 ATTACH 标签。
+				每个任务都有自己特定的附件目录(attachment directory)，其位置在当前Org文件所在目录下的 data 目录下(由 org-attach-directory 决定)，有两级，一级名为任务ID属性(一个UUID值)的前两个字符，二级名为任务ID属性的后三十四个字符，任务所有的附件都保存在第二级目录下。
+				当一个文件被指定为某任务的附件后，其就将被放于该任务特定的附件目录中。
+				任务的 Attachments 属性指明了该任务的附件，可能是空格分隔的多个文件名(无路径)。而根据任务的 ID 属性可推断出该任务的附件目录。
+				变量 org-attach-directory :指明了附件目录的根目录，各任务的附件目录在其下创建。若是相对路径则是基于当前Org文件所在目录，亦可指定绝对路径(这对于未来可能会改变目录位置的任务或Org文件是必须的)。默认值为 data/ 。
+				C-c C-a		org-attach :各种附件操作的入口命令(dispatcher)。各子命令如下：
+					a		 :选择一个文件作为附件，变量 org-attach-method 决定是拷贝还是移动。
+					c/m/l		 :拷贝/移动/链接一个文件作为附件。(硬)链接暂不支持。
+					n		 :在附件目录下创建一个新文件作为附件，并立即开始编辑该文件。
+					z		 :同步当前任务与其对应附件目录。若手工增删了附件目录下的文件，则用该命令同步一下即可。
+					o		 :打开当前任务的附件，若有多个则提示选择一个。根据文件类型由变量 org-file-apps 决定用何应用打开该文件。
+					O		 :强制用Emacs打开附件。
+					f		 :打开当前任务的附件目录，可能是用一个外部应用来打开。
+					F		 :强制用Emacs的dired模式打开附件目录。
+					d		 :从当前任务的附件目录中删除一个附件。之后可能还得同步一下。
+					D		 :删除当前任务的所有附件。
+					s		 :为当前任务指定特定的附件目录。这通过为当前任务指定 ATTACH_DIR 属性来达成。
+					i		 :使当前任务的子任务能继承使用当前任务的附件目录。这通过为当前任务指定 ATTACH_DIR_INHERIT 属性来达成。
+			**导出(Exporting)和发布(Publishing)：
+				C-c C-e		org-export :当前文件导出。
+				Org包含一个发布管理系统，可以配置一个由相互链接的Org文件组成的工程项目自动向HTML转换，并将导出的HTML页面和相应的附件如图片，源代码等文件自动上传到服务器。参考 info:org:Publishing 。
+		**任务管理：
+			**通用命令：
+				M-S-RET		org-insert-todo-heading :插入一个新任务，即插入一个与当前标题行同级的新的标题行，且标题已有 TODO 字串，光标置于行尾以等待输入具体的标题。注意在输入具体的标题前，即光标置于 TODO 后且后无内容时，连按 TAB 键可以调整该标题行等级，另外，若要再增加等级，可以先执行一下 org-end-of-line (即到行尾的动作)再按 TAB 键即会增加一级。
+				C-S-RET		org-insert-todo-heading-respect-content :与 org-insert-todo-heading 功能一样，不同点在于其会在当前标题内容(包括子标题)后插入新任务。
+				C-c C-t		org-todo :切换当前任务的状态。可以将一个普通标题变为任务(即加入 TODO 字串)，或将任务状态变为完成(即将 TODO 变成 DONE )，或将完成的任务变为普通标题(即将 DONE 字串删除)。
+				变量 org-log-done :其控制任务状态变为完成时记录什么信息。默认值为 nil ，表示什么也不干。为 time 则在标题行下加一时间戳，形式为 CLOSED: [timestamp] 。为 note 则除了加时间戳还将提示输入并加上一点注解，注解显示格式由变量 org-log-note-headings 控制。
+				变量 org-log-into-drawer :其控制在插入状态变化注解及时间戳时是否将其放于抽屉中。默认值为 nil 。抽屉默认名为 LOGBOOK 。
+				S-LEFT / S-RIGHT		org-shiftleft / org-shiftright :当光标处于标题行时，与 org-todo 一样切换任务状态。
+				变量 org-todo-keywords :其指定了任务的状态序列。可以同时指定多个状态序列，参考 [[info:org:Multiple sets in one file]] 。
+				C-c C-v 或 C-c / t		org-show-todo-tree :使得当前缓冲只显示 TODO 条目，其它标题都折叠起来。如果带上 C-u 前辍，则会提示输入关键字并只显示匹配上关键字的 TODO 条目，关键字可以指定多个，之间以 | 分隔。
+				C-c C-z		org-add-note :为当前任务加注解(note)，其行为与加 state change note 一样。
+			**日期与时间(Dates and Times)：
+				**时间戳(timestamp)：
+					时间戳使用 < 和 > 进行标记。
+					时间戳有两种类型，一种为时间点，另一种为时间周期。
+						时间点比如 <2003-09-16 Tue 12:00-12:30> 。
+						时间周期为一个时间点后跟一个时间间隔(repeater interval)(用 + 加 天(d) 、 周(w) 、 月(m) 、 年(y) 来表示)，比如 <2007-05-16 Wed 12:30 +1w> ，表示从2007-05-16 12:30开始，每周重复一次。
+						还有一个表示警告持续时间(warning period)的语法，用 - 加时间单位来表示，比如 <2004-02-29 Sun -5d> 。
+					两个时间戳用 -- 连接起来就定义了一个时间段，比如 <2004-08-23 Mon>--<2004-08-26 Thu> ，连续使用 C-c . 可以直接创建时间段，而 C-c C-y 可计算时间段的间隔。
+					C-c .		org-time-stamp :在当前位置插入一个时间戳(字串)，会显示 calendar 供选择。默认只给出一个日期，加前辍 C-u 则连带给出一个时间。
+					C-c !		org-time-stamp-inactive :插入一个与任务没有关系的时间戳，其放于方括号中。默认只给出一个日期，加前辍 C-u 则连带给出一个时间。
+						在显示 calendar 并给出默认时间提示时，可以仅输入日期的一部分比如天数或时间串比如xx:xx来快速的基于默认时间修改而得到一个时间，很方便。
+						亦可使用以下键来配合 calendar 快速得到一个时间戳：
+							> 或 <		 :日历翻过一月。
+							mouse-1		 :鼠标选中一个日期。
+							S-<right>/<left>		 :默认提示变化一天。
+							S-<down>/<up>		 :默认提示变化一星期。
+							M-S-<right>/<left>		 :默认提示变化一月。
+							<RET>		 :使用默认提示。
+					C-c <		org-date-from-calendar :直接插入 *Calendar* 缓冲中的当前时间。
+					C-c >		org-goto-calendar :打开日历定位当前时间。(按q)离开 *Calendar* 缓冲时，光标所在位置即成为当前时间。
+					S-LEFT / S-RIGHT		org-shiftleft / org-shiftright :当光标处于时间戳上时，以天为单位调整时间戳的时间。
+					S-UP / S-DOWN		org-shiftup / org-shiftdown :当光标处于时间戳上时，调整光标所在时间单位的时间。
+					C-c C-y		org-evaluate-time-range :计算时间段的间隔，结果显示在回显区。加前导参数则将结果追加到当前时间段的后面。
+					C-c C-o		org-open-at-point :当光标处于一个时间戳或时间段上时，该命令将进入日程表(agenda)视图并列出指定时间或时间段的信息。
+					C-c C-s		org-schedule :为标题加上 SCHEDULED 行，表示任务计划开始时间。如果带上 C-u 前辍，则移除。
+					C-c C-d		org-deadline :为标题加上 DEADLINE 行，表示任务计划结束时间。如果带上 C-u 前辍，则移除。
+					C-c / d		org-check-deadlines :只显示任务计划结束时间在指定范围内的未完成任务，默认为变量 org-deadline-warning-days (默认为14)指定的天数，加 C-u 前辍则为全部，而数字前辍则表示天数。
+					C-c / b		org-check-before-date :Sparse tree for deadlines and scheduled items before a given date.
+					C-c / a		org-check-after-date :Sparse tree for deadlines and scheduled items after a given date.
+				**重复任务：有些任务应周期性执行，比如每月都要还房贷，这称为重复任务(Repeated tasks)。
+					当为任务 DEADLINE 指定一个时间周期，该任务即成为一个重复任务，比如 DEADLINE: <2005-10-01 Sat +1m> 。
+					如果还要指定警告持续时间，则需将其写在重复间隔后面，比如 DEADLINE: <2005-10-01 Sat +1m -3d> 。
+					当转变重复任务的状态到 DONE 时，系统会将开始时间增加一个时间周期，然后自动将 DONE 状态切换回 TODO 状态，并在任务 DEADLINE 行下加入一条记录描述当次任务完成的状态变化及完成时间。
+					以下两种情形都是为了解决这个问题：当最近有多次任务未完成时，不想再依次完成每个任务(因为每完成一次才增加一个时间周期)。
+						如果重复描述符为 ++ ，比如 ++1m ，则完成任务时，如果开始时间在以前，则按周期将其累加至最近的一个未来时间，如果开始时间在以后，则将其增加一个时间周期。
+						如果重复描述符为 .+ ，比如 .+1w ，则完成任务时，会将开始时间直接变为当前时间。
+					任务的 DEADLINE 和 SCHEDULED 均可用于指定重复任务，但在二者同时出现时必须保证具有相同的重复周期。
+					另一种生成周期性任务的方法是 C-c C-x c ，参见对 org-clone-subtree-with-time-shift 的描述。
+				**记录工作时间(Clocking work time)：clock的目的是为了统计/实时显示完成一个任务及其子任务所耗费的时间。
+					当开始记录时间(称为 clock-in )时，会在任务下插入一个 CLOCK 行，其包含开始时间戳，而当停止记录时间(称为 clock-out )时，会在该行后追加一个停止时间戳及一个时长信息。
+					一个任务下可有多个 CLOCK 行，表示各个工作时段。
+					当任务状态转为完成时，系统会自动停止记录时间。
+					系统在某个时间点只会为一个任务记录时间，当开始一新的时间记录时，前一个记录自动停止。
+					开始记录时间后，系统会记住这个状态(激活状态)，并在状态行(偏后部)显示任务当前工作时长(按分钟变化)和任务标题，停止记录时间后则消失。工作时长是任务及其子任务的所有统计时长。
+					某些情况下，比如关闭或重新装入缓冲和系统重启等，可能会导致系统并不知道有任务在记录时间，即有任务具有 CLOCK 开始行，但系统并不在记录时间的状态(状态行无显示)，这种行称为 dangling clock 。如果包含这种行的缓冲存在，则开始一个新的时间记录时系统会找到并提问对这种行的处理，具体行为参见下面对 org-clock-idle-time 的描述。
+					有方法可以保证系统重启不对记录时间的行为造成影响，具体参见下面对 org-clock-persist 的描述，实现手段就是在系统退出时记住当前clock状态，再次启动时则激活这个记住的clock即可。但在实验(emacs-23.4.1)过程中发现有些问题，系统再次启动时，确认激活后，会提示错误"Cannot restart clock because task does not contain unfinished clock"而无法激活，在源码 lisp/org/org-clock.el 中查到该错误的位置并研究了代码后知道，在函数 org-clock-in 中，搜索clock起始时间戳字串时，指定的正则表达式在开头多了一个空格，搜不到所以出错了，把这个空格去掉并用 byte-compile-file 编译一下该源码后，就能正常工作了。
+					一个完整的 CLOCK 行其开始和结束时间戳其实就构成了一个时间段，当手工修改了时间后可用 C-c C-y 或 C-c C-c 来重新计算时长，当然，快捷键比如 S-UP/DOWN 等调整时间时会自动重算时长。
+					变量 org-clock-persist :其控制是否在emacs退出时记住当前活动的clock，默认为nil。记录clock所用文件由变量 org-clock-persist-file 指定，其默认值为 ~/.emacs.d/org-clock-save.el 。还需在 ~/.emacs 中指定 (org-clock-persistence-insinuate) 以使系统启动时读出(并删除)所记录的clock并激活之。
+					C-c C-x C-i		org-agenda-clock-in :为当前任务开始记录时间(clock-in)。变量 org-clock-into-drawer 决定是否将插入的 CLOCK 行放入名为 LOGBOOK 的抽屉中，其默认值从变量 org-log-into-drawer 取得。
+					C-c C-x C-o		org-agenda-clock-out :停止当前活动的时间记录(clock-out)。变量 org-log-note-clock-out 决定在停止时间记录时是否还记录一些注解(note)，默认值为nil。
+					C-c C-x C-x		org-agenda-clock-cancel :取消当前活动的时间记录。
+					C-c C-x C-j		org-clock-goto :跳到最近clock的任务。加前导参数则给出曾clock的任务列表供选择。
+					C-c C-x C-d		org-clock-display :显示整个缓冲中各个子树的工作时长。会在各个标题后放置 overlay 来显示时长，对文档实际内容并无影响，当文档内容变化时(由变量 org-remove-highlights-with-change 决定)或按了 C-c C-c 后 overlay 消失。
+					C-c C-x C-r		org-clock-report :插入一个工作时长的报告表(是个 dynamic block )，如果当前光标处于一个已存在的表上则更新之。表的配置有很多，具体参考[[info:org:Clocking work time]]。
+						C-c C-x C-u		org-dblock-update :更新当前报告表。带 C-u 则更新所有。
+						S-LEFT/RIGHT
+					**变量 org-clock-idle-time :默认值为nil，可设为一个分钟数，那么在 clock in 状态下，当emacs空闲了这个分钟数后就会认为用户做了其它事情，当其再次活动时会提示用户如何处理这段做了其它事情的时间(idle time)，选项如下：
+						k		 :保留指定时长，停留在 clock in 状态。
+						K		 :保留指定时长，转换成 clock out 状态。
+						s		 :不保留空闲时长，停留在 clock in 状态。
+						S		 :不保留空闲时长，转换成 clock out 状态。
+						C		 :取消当前clock。
+						那些去掉的时长可能是做了其它任务，如果想将这个时长应用到其它任务上，则可立即 clock in 到其它任务，Org会提示是否将该时长应用上。
+						经实验，该功能在Windows下不工作。 Win7 + Emacs-23.4.1
+				**工作量估算(Effort estimates)：用于更细致的计划未来的工作。
+					为任务指定了估算的工作量后，当这个任务开始clock时，在状态行显示的任务当前工作时长后会增加显示出估算的工作量值，这样会有一个更直观的对比。
+					C-c C-x e		org-set-effort :为当前任务设置工作量属性，即在 PROPERTIES 抽屉中加入 Effort 属性，会提问工作量的值，可指定一个分钟数或形如 hh:mm 的串。
+					C-c C-x C-e		org-clock-modify-effort-estimate :只在当前有clock激活时起作用。用于调整当前激活了clock的那个任务的工作量值，亦会导致状态行工作量值的更新。
+				**计时器(relative timer)：提供了对一系列精确相对时间点进行描述的方法。
+					计时器启动后会在状态行(偏后部)显示 <H:MM:SS> ，表示计时器当前时间(按秒变化)，停止计时器后则消失。
+					C-c C-x 0		org-timer-start :启动/重置计时器。带 C-u 参数则提示用户输入启动/重置到的相对时间，而默认提示值为光标当前所处的相对时间串如果有的话。带 C-u C-u 参数则会对选中区域内的所有相对时间串进行调整，会提示用户输入一个偏移量(分正负)，然后对选中区域内的所有相对时间串进行加/减，默认会以选中区域内的第一个相对时间串的负值做为偏移量，那么会将选中区域内的第一个相对时间串重置为0，其它的时间串也相应减少。
+					C-c C-x ,		org-timer-pause-or-continue :暂停/继续计时器。带 C-u 参数则停止计时器。
+					C-c C-x .		org-timer :插入格式为 H:MM:SS 的一个从当前计时器取得的相对时间串。若当时没有计时器则启动一个并插入 0:00:00 。带 C-u 参数则重置计时器并插入 0:00:00 。
+					C-c C-x -		org-timer-item :与 org-timer 行为一样，只是插入的是一个相对时间点列表条目，类似这样 - 0:03:40 :: ，接下来就可以输入对该时间点的描述了。
+					M-RET		org-meta-return :当光标处于时间点列表上时，其调用 org-timer-item ，非常方便。
+			**任务优先级(priorities)：
+				可以为任务指定优先级，通过在 TODO 后加入一个类似 [#A] 的字串来表示，这个字串称为 priority cookie 。当然，并不是只有任务才可以指定优先级，任何标题均可以加上优先级。
+				默认的，Org模式支持三档优先级： A 、 B 和 C ，优先级 A 为最高，那些没有指定优先级的任务默认被认为是 B 级。
+				变量 org-highest-priority
+				变量 org-lowest-priority
+				变量 org-default-priority
+				C-c ,		org-priority :为当前标题指定优先级，输入空格则移除 priority cookie 。
+				S-UP / S-DOWN		org-shiftup / org-shiftdown :光标当前在标题行上时，提高/降低优先级(调用 org-priority-up / org-priority-down )，若没有优先级则先插入一个。
+			**任务进度：即子任务完成情况。
+				可以在任务标题中的任意位置插入 [%] 或 [/] ，代表其下子任务的完成百分比或分数比，其将被更新数值，类似 [66%] 或者 [2/3] 。
+				当子任务的状态发生变化时，会自动更新数值。或者当光标在其上时按 C-c C-c 主动更新一下数值。
+				变量 org-hierarchical-todo-statistics :控制进度值的计算是否包含间接子任务。默认值为 t ，表示只统计直接子任务，设为 nil 则会统计整个当前子树的任务进度。
+				当子任务都完成时，任务进度标记为 [100%] ，但任务状态并不自动转变为完成。为了能自动连带转变任务状态为完成，需要写个自动函数，具体参考 [[info:org:Breaking down tasks]] 。
+			**转移(Refiling)：自动完成转移子树的整个过程，即"剪切子树->查找新位置->粘贴子树"。
+				C-c C-w		org-refile :转移当前子树或当前选中区域内的所有子树到另一个标题(有补齐)下(成为其子标题)。加参数 C-u 表示只跳到目标位置而不实际转移，加 C-u C-u 则表示跳到上次转移操作的目标位置；加前导数字 2 表示转移到当前正处于 clock-in 状态的任务中。
+				变量 org-refile-targets :在转移子树操作中提问目的地标题时为自动补齐所提供的目标标题列表是依据该变量的值动态计算得到的。其值为一个 cons cell 的列表，每个 cons cell 的构成如下：
+					其CAR部分决定了目标文件，可以是一个文件名或文件名列表，亦可以是一个能推导出其变量值或函数值为一个文件名或文件名列表的符号(因而可以使用变量 org-agenda-files )。 nil 值表示使用当前缓冲。如果文件名中使用相对路径，则其基于用户主目录(~/)。观察代码(lisp/org/org.el -- org-get-refile-targets())知，如果指定一个函数，则函数可返回一个buffer或buffer列表，而不必非得是一个文件名或文件名列表，在内部处理中，前者更高效；另外，实验知，函数必须保证不改变当前缓冲(用函数 with-current-buffer 可达成)，否则，在处理后续配置项时有可能报错，因为在处理过程中一直在跟踪当前缓冲，如果当前缓冲变化了，则处理 nil 值(翻译成当前缓冲)时就会有问题，会取得不恰当的缓冲，导致后续处理出错，参见"emacs配置小技巧"第[[A2]]。
+					其CDR部分决定了在指定目标文件中可以选用哪些标题作为目的地的规则，具有下列形态：(只能用其一，不能组合)
+						一个形如 (:tag . "TAG") 的 cons cell ，即以具有指定标签的标题作为目标。继承得到的标签不考虑。
+						一个形如 (:todo . "KEYWORD") 的 cons cell ，即以具有指定 todo keyword 的标题作为目标。
+						一个形如 (:regexp . "REGEXP") 的 cons cell ，即以匹配了指定正则表达式的标题作为目标。
+						一个形如 (:level . N) 的 cons cell ，即以指定的第 N 级标题作为目标。级数的计算会受到变量 org-odd-levels-only 的影响。
+						一个形如 (:maxlevel . N) 的 cons cell ，即以所有小于等于 N 级(<= N)的标题作为目标。级数的计算会受到变量 org-odd-levels-only 的影响。
+					可为变量 org-refile-target-verify-function 指定一个函数来再次检查一下前述规则选出的标题是否可看作是目标标题，其默认值为 nil 。
+					默认值为 nil ，其意义等价于 ((nil . (:level . 1))) ，即取当前缓冲中的所有一级标题作为补齐候选的目标标题列表。
+				变量 org-reverse-note-order :该变量决定了转移来的子树在目标标题下会成为其下首标题还是尾标题。默认值为 nil ，即成为尾标题。
+				变量 org-refile-use-outline-path :默认值为nil，为non-nil表示在提问转移到的目标标题时将以类似路径表达的形式来描述待补齐标题，比如 level1/level2/level3 ，特别的，若值为 file 则路径描述中亦包含文件名(不包括文件路径，但若 full-file-path 为真则包括)。
+				变量 org-outline-path-complete-in-steps :默认值为t，表示目标标题一级级补齐。同时，变量 org-refile-allow-creating-parent-nodes 可控制是否允许创建新的节点作为转移的目标，默认为nil，即只允许补齐已存在的入口。
+				变量 org-completion-use-ido :默认值为nil，为non-nil表示使用 ido 风格的目标标题补齐方式。前提是 ido-mode 必须是活动的，且最好将 org-outline-path-complete-in-steps 关闭。
+				变量 org-completion-use-iswitchb :默认值为nil，为non-nil表示使用 iswitchb 风格的目标标题补齐方式。前提是 iswitchb-mode 必须是活动的，且最好将 org-outline-path-complete-in-steps 关闭。
+			**归档(Archiving)：已完成的任务应当归档，从而成为一种被特殊处理的子树。
+				已归档的任务默认不会再被议程视图所收集，这一点对于快速构造议程视图很重要，也有助于保持紧凑高效的工作环境。
+				任务有两种归档方式，一种是将任务移到特定的归档文件中并为其添加适当的属性，一种是不移动任务而只为其加上名为 ARCHIVE 的标签。
+				C-c C-x C-a		org-archive-subtree-default :用默认命令归档当前任务。默认命令由变量 org-archive-default-command 指定，其默认值为 org-archive-subtree 命令。
+				C-c $		org-archive-subtree :将当前任务移动到默认归档文件(由变量 org-archive-location 指明)中，并为任务添加一系列 ARCHIVE_XXXXX 属性(由变量 org-archive-save-context-info 决定都有哪些)以指明归档时间/原始位置等等。
+				C-c C-x C-s		org-advertized-archive-subtree :其为 org-archive-subtree 的别名。
+				变量 org-archive-location :指明了归档操作的目标位置。其值为一个字串，由被双冒号(::)分隔的两部分构成，前一部分指明归档文件名，后一部分指明一个标题行(包括行首的星号)，那么，被归档的任务将被放于指定文件的指定标题下(会自动调整归档任务的标题等级)。省略归档文件名表示以原文件作为归档文件。省略标题行则表示被归档任务将直接变为一级标题追加到归档文件尾部。字串中可用 %s 代表原文件名(不带路径)，其在前后两部分中都可使用。归档文件若指定相对路径则其以原文件所在目录作为基准，其亦可指定绝对路径。可在文件级别配置其值，比如 #+ARCHIVE: basement::** Finished Tasks ，亦可为某任务指定特殊值，只需为该任务或其父标题指定 ARCHIVE 属性即可。其默认值为"%s_archive::"，即归档到一个与当前Org文件在同一目录下且用当前Org文件名加 _archive 作为归档文件名的文件的末尾并变为一个一级标题。
+				C-c C-x a		org-toggle-archive-tag :翻转当前任务的 ARCHIVE 标签。具有 ARCHIVE 标签的任务即成为归档任务，这种归档任务具有以下特点：
+					普通的展开命令无法将其展开，即正常情况下这种归档任务始终保持折叠，得用 C-TAB 才能将其展开，或者配置变量 org-cycle-open-archived-trees 或使用命令 show-all 也行。
+					不参与构造 sparse tree ，这由变量 org-sparse-tree-open-archived-trees 控制。
+					不参与构造议程视图，这由变量 org-agenda-skip-archived-trees 控制。
+					在导出时只输出标题行，这由变量 org-export-with-archived-trees 控制。
+					不包括在 column view 中，这由变量 org-columns-skip-arrchived-trees 控制。
+				C-TAB		org-force-cycle-archived :用于展开具有 ARCHIVE 标签的子树。
+				C-c C-x A		org-archive-to-archive-sibling :通过移动到 archive sibling 下来归档当前任务。 archive sibling 是指与要归档任务同级的一个标题名为 Archive (由变量 org-archive-sibling-heading 指定)且具有 ARCHIVE 标签(由变量 org-archive-tag 指定)的标题。归档时如果 archive sibling 不存在则系统会在所有同级标题的最后新建一个。这种方式能使被归档任务保留一些原始的上下文环境，比如继承的标签以及近似不变的位置等，另外，归档任务被适当加了一些属性，比如归档时间等。
+			**议程视图(Agenda Views)：
+				org-agenda :该命令是agenda相关功能的一个总入口，称为 agenda dispatcher ，其会将后续按键映射(dispatch)到某命令上，并会将前导参数也传下去。通常将其绑定到 C-c a 上，后面描述也会带上这个前导按键组合。
+				议程视图是为了能从一个或多个文件中收集特定的信息并有组织的(in an organized way)放于一个新的主模式为 org-agenda-mode 的缓冲区(模式行显示 Org-Agenda 主模式)中以方便操作。
+				**议程视图依据收集信息的不同准则，提供了7种不同类型的视图(view)：
+					C-c a a		org-agenda-list : agenda ，日程表，类似于一个 calendar ，显示特定日期的信息。日程表根据任务的计划时间列出每天的任务。在日程表视图中按 l 显示日志。这样就会显示你所有已经完成的任务和他们完成的时间。
+					C-c a t/T		org-todo-list : TODO list ，任务表，包含所有未完成任务。在任务表视图中，用 t 键改变任务状态，按 RET 跳到该条目所在的源文件。
+					C-c a m/M		org-tags-view : match view ，匹配表，显示所有基于标签(tags)、属性(properties)、任务状态(TODO state)匹配的标题行。可以进行复杂的匹配，参见"标签/属性匹配"。
+					C-c a L		 : timeline view ，时间线，按时间顺序显示当前缓冲(Org文件)内的所有事件。带前导参数则所有未完成任务亦被列于当前日期下。
+					C-c a s		 : keyword search view ，关键字搜索视图，显示所有包含特定关键字的入口(entries)。
+					C-c a #/!		 : stuck projects view ，showing projects that currently don't move along.
+					C-c a /		 : custom views ，使用了 multi-occur 命令，从 agenda files 及变量 org-agenda-multi-occur-extra-files 所指定文件列表中搜索指定正则表达式。
+				**agenda files ：默认打开议程视图时，信息都是从 agenda files 中收集而来。
+					变量 org-agenda-files :该变量为一个文件名的列表，其指明的文件集合即所称的 agenda files 。列表中的文件名还可以是个目录，则将包含该目录下所有 .org 文件。如果 org-agenda-files 的值不是列表而只是一个单独的文件名，则文件名列表由该文件内容决定。
+					C-c [		org-agenda-file-to-front :将当前文件插入到 org-agenda-files 的开头。注意：要慎用，其会直接调整 ~/.emacs 文件，即在 custom-set-variables 段中插入类似 '(org-agenda-files (quote ("c:/work/zhl/reference_source/zhl.org"))) 的语句。
+					C-c ]		org-remove-file :将当前文件从 org-agenda-files 移除。
+					C-, 或 C-'		org-cycle-agenda-files :在 org-agenda-files 指明的文件列表中轮转。
+				**临时目标：可以临时针对某个文件(或其子树)而不是 agenda files 来打开议程视图。
+					C-c C-x <		org-agenda-set-restriction-lock :临时限定议程视图针对的是当前子树，带前导参数或当时光标正处于文件中第一个标题行之前则针对的是当前文件。之后再打开议程视图则都针对的是这个临时目标，直到解除限定后才又针对 agenda files 。
+					C-c C-x >		org-agenda-remove-restriction-lock :解除临时限定。
+					C-c a <		 :即在 agenda dispatcher 中按 < ，表示随后的打开议程视图操作针对的是当前缓冲，之后还需再按键来打开指定类型的议程视图。其与 C-c C-x < 的区别是，后者会影响到后续所有打开议程视图的操作，而前者只是影响到紧接着的打开议程视图的操作。
+					C-c a < <		 :即在 agenda dispatcher 中按两次 < ，与按一次 < 类似，只是设定临时限定为当前子树或当前选中区域(如果有的话)。
+					C-c a >		 :即在 agenda dispatcher 中按 > ，其等价于 C-c C-x > 。
+				**agenda buffer ：
+					议程视图中的各个条目都是关联回(linked back to)原始文件中对应条目的，因此对议程视图中各个条目的操作相当于对原始文件中对应条目进行了相同的操作。
+					C-x C-w		org-write-agenda :将当前议程视图输出成一个文件，且根据输出文件扩展名的不同而输出不同的格式，具体为： HTML ( .html 或 .htm )(需要有 htmlize.el 的支持) 、 Postscript (.ps) 、 PDF (.pdf)(需要有 ghostscript 的工具 ps2pdf 的支持：http://www.ghostscript.com/download/) 、 iCalendar (.ics) ，对于其它扩展名则生成 plain text 。加前辍 C-u 则在输出后立即打开所生成文件。变量 org-agenda-exporter-settings 用于设置运行 ps-print 和 htmlize 时所用的选项。
+					**Motion：
+						n		org-agenda-next-line :光标下移一行。
+						p		org-agenda-previous-line :光标上移一行。
+						C-c C-n		org-agenda-next-date-line
+						C-c C-p		org-agenda-previous-date-line
+					**View/Go to Org file：
+						SPC		org-agenda-show-and-scroll-up :在另一窗口显示原始条目，光标并不跳转。加前导参数能保证原始条目是展开的，而不仅仅只显示标题行。
+						L		org-agenda-recenter :与 SPC 一样，只是同时会将内容居中。
+						TAB		org-agenda-goto :与 SPC 一样，只是光标会跳转。
+						RET		org-agenda-switch-to :直接在当前窗口切换到原始条目。
+						F		org-agenda-follow-mode :翻转跟随模式(模式行显示 Follow 辅模式)。跟随模式将导致在条目间移动时能即时在另一窗口显示对应的原始条目。默认为关，变量 org-agenda-start-with-follow-mode 能控制在打开议程视图时是否自动打开。
+						C-c C-x b		org-agenda-tree-to-indirect-buffer :在一个间接缓冲(indirect buffer)中显示当前条目的整个子树。数字前辍指定上级。其实是将全部原始内容放于一个临时缓冲中，然后利用 narrow 只将指定子树显示出来，而将其它部分都隐藏起来。
+						C-c C-o		org-agenda-open-link :打开当前条目的内容中的某个超级链接。若有多个链接则会提示进行选择，若只有一个链接则直接跳转。
+					**Change display：
+						o		delete-other-windows :关闭其它窗口。
+						v		org-agenda-view-mode-dispatch :
+							v d 或 d		org-agenda-day-view :(模式行显示 Day 辅模式)
+							v w 或 w		org-agenda-week-view :(模式行显示 Week 辅模式)
+							v m		org-agenda-month-view :(模式行显示 Week 辅模式)
+							v y 或 y		org-agenda-year-view :(模式行显示 Week 辅模式)
+							Switch to day/week/month/year view. 可加数字前辍，比如 32 d 表示今年第32天， 9 w 表示今年第9周， 5 v m 表示今年第5月，亦可指定年份，比如 200712 w 表示2007年第12周，如果只用1或2个数字来指定年份，则其在 1938-2037 间进行计算。
+						f		org-agenda-later :显示下一时间周期，比如当前按月查看则显示下一月。周期由变量 org-agenda-ndays 控制，其在不同的时间尺度(日/周/月/年)上意义也不太一样。可加数字前辍，表示前进多个时间周期。
+						b		org-agenda-earlier :与 f 相对，显示上一时间周期。
+						.		org-agenda-goto-today :到今天。时间尺度并不变，只是时间窗口会包含今天。
+						j		org-agenda-goto-date :到指定日期。会提示输入日期，有日历，参见前面对 org-time-stamp 的描述。
+						D		org-agenda-toggle-diary :Toggle the inclusion of diary entries.
+						v l 或 l		org-agenda-log-mode :翻转 Logbook 模式(模式行显示 Log 辅模式)。默认只显示未完成任务，打开后则已完成任务也显示出来，变量 org-agenda-log-mode-items 决定了连带显示的范围。加前导参数 C-u 则显示所有类型，而 C-u C-u 则只显示已完成任务(logging information)。
+						v [ 或 [		org-agenda-manipulate-query-add :Include inactive timestamps into the current view. Only for weekly/daily agenda and timeline views.
+						v a/A		org-agenda-archives-mode :翻转 Archives 模式(模式行显示 :ARCHIVE:/Archives 辅模式)。将同时显示已归档的任务(打上标签 :ARCHIVE: 的任务)，若用 v A 则那些归档文件亦被处理。
+						v R 或 R		org-agenda-clockreport-mode :翻转 Clockreport 模式(模式行显示 Clock 辅模式)。默认关闭，变量 org-agenda-start-with-clockreport-mode 控制其在打开议程视图时是否自动打开。
+						v E 或 E		org-agenda-entry-text-mode :翻转 entry text 模式(模式行显示 ETxt 辅模式)。相当于显示一点任务的上下文，行数由变量 org-agenda-entry-text-maxlines 决定，或由前导数字参数直接决定。
+						G		org-agenda-toggle-time-grid :翻转 time grid 模式(模式行显示 Grid 辅模式)。参考变量 org-agenda-use-time-grid 和 org-agenda-time-grid 。
+						r 或 g		org-agenda-redo :刷新(Recreate the agenda buffer)。
+						s 或 C-x C-s		org-save-all-org-buffers :保存所有Org缓冲。
+						C-c C-x C-c		org-agenda-columns :Turn on or update column view in the agenda.
+					**Secondary filtering and query editing：
+						/		org-agenda-filter-by-tag :
+						\		org-agenda-filter-by-tag-refine :
+						[ 和 ] 及 { 和 } :在 search view 中用于修改查找的关键字或正则表达式。opening bracket/brace 用于加上 +term ，closing bracket/brace 则用于加上 -term ，参见"标签/属性匹配"。
+							[		org-agenda-manipulate-query-add
+							]		org-agenda-manipulate-query-subtract
+							{		org-agenda-manipulate-query-add-re
+							}		org-agenda-manipulate-query-subtract-re
+					**Remote editing：
+						C-/ 或 C-_ 或 C-x u		org-agenda-undo :取消操作亦会作用回原始条目。
+						t 或 C-c C-t		org-agenda-todo :切换当前任务的状态。
+						C-S-LEFT		org-agenda-todo-previousset :Switch to the previous set of TODO keywords.
+						C-S-RIGHT		org-agenda-todo-nextset :Switch to the next set of TODO keywords.
+						C-k		org-agenda-kill :删除当前条目，将导致原始条目(整个子树)也被删除。若实际删除内容多于一行，则会提问确认，这行为由变量 org-agenda-confirm-kill 所控制。
+						C-c C-w		org-agenda-refile :Refile the entry at point.
+						C-c C-x C-a		org-agenda-archive-default :归档，移动当前子树到默认归档文件中去。
+						a		org-agenda-archive-default-with-confirmation :归档，移动当前子树到默认归档文件中去，之前会确认。
+						C-c C-x a		org-agenda-toggle-archive-tag :为当前标题翻转归档标签(ARCHIVE)。
+						C-c C-x A		org-agenda-archive-to-archive-sibling :Move the subtree corresponding to the current entry to its _archive sibling_.
+						$ 或 C-c $ 或 C-c C-x C-s		org-agenda-archive :归档，移动当前子树到配置的归档位置(configured archive location)中去(可能有多个归档文件)。
+						T		org-agenda-show-tags :显示所有与当前条目关联的标签，包括继承来的，这在变量 org-agenda-show-inherited-tags 为nil时很有用。
+						: 或 C-c C-q		org-agenda-set-tags :为当前标题或选中区域内的所有标题设置标签。
+						,		org-agenda-priority :为当前条目设置优先级。
+						P		org-agenda-show-priority :显示当前条目的优先级，这个优先级是个综合值(weighted priority)。
+						S-UP 或 +		org-agenda-priority-up :提高当前条目的优先级。系统不会自动重新排序，可以按 r 刷屏来重新排序，优先级是排序的依据之一。
+						S-DOWN 或 -		org-agenda-priority-down :降低当前条目的优先级。
+						z 或 C-c C-z		org-agenda-add-note :为当前条目加注解(note)，其行为与加 state change note 一样。
+						C-c C-a		org-attach :Dispatcher for all command related to attachments.
+						C-c C-s		org-agenda-schedule :为当前标题加上 SCHEDULED 行。
+						C-c C-d		org-agenda-deadline :为当前标题加上 DEADLINE 行。
+						k 或 C-c C-x C-k		org-agenda-action :该入口命令的功能是，先标记一个条目，然后光标移动到某个时间上，最后以该时间设置指定条目的 SCHEDULED 或 DEADLINE 行。时间既可以是光标下的时间戳，亦可以是打开 calendar (按 c 键)后光标所停留的日期，另外，在 calendar 中也绑定了该命令(按 k 键)。后续按键如下：
+							m		 :标记当前条目，只会记住一个条目。在Org模式中亦可用命令 C-c C-x C-k (org-mark-entry-for-agenda-action)来标记一个条目。
+							s		 :以光标所在时间为所标记条目加上/修改 SCHEDULED 行。系统不会自动重新排序，可以按 r 刷屏来重新排序，任务计划是排序的依据之一。
+							d		 :以光标所在时间为所标记条目加上/修改 DEADLINE 行。
+							SPC		 :在另一窗口显示所标记条目。
+							TAB		 :在另一窗口访问所标记条目。
+						S-RIGHT		org-agenda-do-date-later :按天调高时间戳。数字前辍表示调高多天。前辍 C-u 表示调高小时，紧接着的后续该命令可以不带前辍而继续调高小时。前辍 C-u C-u 则用于调高分钟。
+						S-LEFT		org-agenda-do-date-earlier :按天调低时间戳。
+						>		org-agenda-date-prompt :弹出 calendar 来调整时间戳时间。 > 即 S-. 。
+						I		org-agenda-clock-in :Start the clock on the current item. If a clock is running already, it is stopped first.
+						O		org-agenda-clock-out :Stop the previously started clock.
+						X		org-agenda-clock-cancel :Cancel the currently running clock.
+						J		org-clock-goto :Jump to the running clock in another window.
+						e		org-agenda-set-effort :为当前任务设置工作量属性。
+						C-c C-x p		org-agenda-set-property :为当前标题设置一个属性及其值。
+					**Bulk remote editing selected entries：
+						m		org-agenda-bulk-mark :Mark the entry at point for bulk action.
+						u		org-agenda-bulk-unmark :Unmark entry for bulk action.
+						U		org-agenda-bulk-remove-all-marks :取消全部标记。
+						B		org-agenda-bulk-action :整体操作入口命令。
+							r  Prompt for a single refile target and move all entries. The entries will no longer be in the agenda, refresh (`g') to bring them back.
+							$  Archive all selected entries.
+							A  Archive entries by moving them to their respective archive siblings.
+							t  Change TODO state.  This prompts for a single TODO keyword and changes the state of all selected entries, bypassing blocking and suppressing logging notes (but not time stamps).
+							+  Add a tag to all selected entries.
+							-  Remove a tag from all selected entries.
+							s  Schedule all items to a new date. To shift existing schedule dates by a fixed number of days, use something starting with double plus at the prompt, for example `++8d' or `++2w'.
+							d  Set deadline to a specific date.
+					**Calendar commands
+						c		org-agenda-goto-calendar :打开并跳到 calendar 中，光标置于跳转前所处的日期。
+						c		org-calendar-goto-agenda :从 calendar 中跳回议程视图，并定位到跳转前所处日期所在的时间周期。这是一个被安装到 calendar-mode-map 的命令。
+						i		org-agenda-diary-entry :Insert a new entry into the diary, using the date at the cursor and (for block entries) the date at the mark. This will add to the Emacs diary file, in a way similar to the `i' command in the calendar.
+						M		org-agenda-phases-of-moon :Show the phases of the moon for the three months around current date.
+						S		org-agenda-sunrise-sunset :Show sunrise and sunset times. The geographical location must be set with calendar variables, see the documentation for the Emacs calendar.
+						C		org-agenda-convert-date :显示光标所在日期的各种其它文化/历史记法，包括中国农历。
+						h 或 H		org-agenda-holidays :显示光标所在日期的左右三个月中的所有节假日。
+						org-export-icalendar-combine-agenda-files :针对所有 agenda files 输出一个单一 iCalendar 文件，变量 org-combined-agenda-icalendar-file 指定了这个文件，默认值为 ~/org.ics 。这是一个全局可用的命令。在做实验时总是未生成文件，最后发现是因为 agenda files 为空。
+					**Quit and Exit：
+						q		org-agenda-quit :Quit agenda, remove the agenda buffer.
+						x		org-agenda-exit :Exit agenda, remove the agenda buffer and all buffers loaded by Emacs for the compilation of the agenda. Buffers created by the user to visit Org files will not be removed.
+					**杂项：
+						;		org-timer-set-timer :启动一个定时器，超时后会在回显区有提示。该命令不会改变任何东西。
+						?		org-agenda-show-the-flagging-note :Display the flagging note in the other window. When called a second time in direct sequence, offer to remove the FLAGGING tag and (if present) the flagging note.
+			** org-remember ：快速记录想法。
+				org-remember :会打开一个新的buffer(缓冲名为 *Remember* ，模式为 remember-mode )，输入一些内容之后输入命令 C-c C-c 就会将内容保存到文件中(默认是 ~/.notes )并形成一个条目，以便于以后收集整理。可将其绑定到快捷键上，比如 C-c c 。
+					C-c C-c		org-remember-finalize :输入完成。
+					C-c C-k		org-remember-kill :取消。
+				还可以使用客户端来打开： emacsclient -e "(remember-other-frame)" 或 emacsclient -e "(org-remember)" 。
+				org-remember 还支持模板，可以通过快捷键选择事件的类型，生成特定格式的记录，并插入到指定容器的指定位置。参考 info:org:Remember 。
+				配置问题1：按照帮助进行了如下配置：
+						(org-remember-insinuate)
+						(setq org-default-notes-file "~/.notes.org")
+						(define-key global-map "\C-cc" 'org-remember)
+					但重启后发现为大纲辅模式设置的组合键前辍 C-c 失效了，又变成了默认的 C-c @ 。
+					注掉第一行 (org-remember-insinuate) ，重启后组合键前辍好了，但第二行 (setq org-default-notes-file "~/.notes.org") 又失效了，推测第一行可能是第二行的前提。
+					发现设置变量 outline-minor-mode-prefix (组合键前辍)的语句放在文本模式的勾子中，将其提高到全局初始化，则问题解决。
+					推测原因可能是函数 org-remember-insinuate 的运行会导致outline模式装入，而在此之前若没有预先设置 outline-minor-mode-prefix ，则后来再设置也已经没有用了，因为其只在outline模式装入时才起作用，之后再设置已经不会影响到键位映射表了。
+			** GTD ：
+				在合适的时机检查所有的任务，根据实际情况进行处理。建议的做法包括：
+					每日回顾：每天早上首先查看当日的日程表，然后检查待办任务清单，根据实际情况和当日的时间安排，以及当日的行程(地点)，决定一天的工作计划。
+					周期性回顾：可以是每周，每月或更长的时间周期。回顾一段时间内所完成的事情，做出总结；同时根据实际情况的变化，调整下一阶段的计划。
+					项目回顾：项目是一系列任务的组合，并且任务之间存在依赖关系。根据项目的时间点，在适当的时机回顾整个项目的相关任务，进行总结或计划。
+				可以遵循"六个高度检视法"：
+					5万英尺+：人生目的和价值观(面临重大变化和转折时)
+					4万英尺：3到5年的展望(建议每年检视)
+					3万英尺：1到2年的目标(建议每季检视)
+					2万英尺：责任范围(建议每月检视)
+					1万英尺：当前的项目(建议每周检视)
+					跑道：下一步行动(建议每日检视)
+					前3个较低层次的内容大多是针对事物当前状态(行动、项目、职责)，再向上的层次则主要涉及指导方向、目标取向等方面，需要在恰当的时机去关注需要关注的方面，长远规划，掌控愿景，保持全方位的平衡。
+		**参考：
+			http://blog.163.com/niujiashu@126/blog/static/100293042201121510143389/
+			http://www.cnblogs.com/holbrook/archive/2012/04/12/2444992.html
+			http://www.cnblogs.com/holbrook/archive/2012/04/14/2447754.html
+			http://www.cnblogs.com/holbrook/archive/2012/04/17/2454619.html

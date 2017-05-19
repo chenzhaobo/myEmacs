@@ -1,0 +1,23 @@
+* emacs.d配置
+修改.emacs.d/init.el文件
+
+#+BEGIN_SRC emacs-lisp
+(tool-bar-mode -1) ;;关闭顶部菜单栏
+(scroll-bar-mode -1);;关闭滚动条
+(electric-indent-mode -1);;一个关于换行缩进的模式，不需要关闭
+(global-linum-mode 1);;开启行号
+;;设置f2打开配置文件
+(defun open-init-file()
+  (interactive)
+  (find-file "~/.emacs.d/init.el"))
+(global-set-key (kbd "<f2>") 'open-init-file)
+;;通过菜单Options --> Set Default Font，设置好你喜欢的字体，用命令M-x describe-font来查看你当前使用的字体名称、字号大小
+(set-default-font "-outline-微软雅黑-normal-normal-normal-sans-13-*-*-*-p-*-iso8859-1")
+
+
+#+END_SRC
+
+
+#+BEGIN_SRC 
+
+#+END_SRC

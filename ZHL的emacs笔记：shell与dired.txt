@@ -1,0 +1,191 @@
+
+本文档是"ZHL的emacs笔记"的一部分。
+
+本文档的格式是为了快速检索与浏览而专门调整的，最好用emacs来查看，将tab
+缩进显式设为3个字符，设置不自动换行，并使用outline模式，以提高学习和工
+作效率。具体配置可参考文档"ZHL的emacs笔记：配置小技巧"。
+
+本文档描述了emacs中的shell和dired这两个常用模式，包括功能描述、配置方法
+以及命令索引，当然，主要是本人在使用过程中所关注的细节以及积累的经验。
+
+希望本文档能给emacs同好一些帮助，任何问题或建议可以发信到 seaxii@126.com 来讨论。
+
+文档正文----------------------------------------------------------------
+
+**Emacs工作环境：
+	**执行shell命令：
+		说明：1、默认的，emacs使用当前用户默认的shell来执行各种命令。变量"shell-file-name"指定了使用哪个shell，其值必须是shell命令的完整路径，其值被环境变量 SHELL 初始化，而环境变量 SHELL 的默认值为 C:/Program Files/emacs-23.3/bin/cmdproxy.exe ，是对DOS的一个封装。
+			2、注意，执行shell命令所用何种shell与进入Shell模式打开何种shell是可以用不同的变量分别设置的，二者有一定关联性(默认值都从环境变量 SHELL 继承)，但很可能不相同。
+			3、为了能正确使用 cygwin 提供的各种工具，应将执行shell命令的shell指定为 cygwin 提供的 bash ，即将变量 shell-file-name 的值指定为 C:/cygwin/bin/bash.exe ，这样，再执行 diff-backup 等命令就不会报路径错误了。
+			4、如果执行shell命令后的输出结果显示为乱码，则说明对输出结果采用的解码方式不对，调整为合适的解码方式后应该就显示正确了。针对shell命令的编解码方式亦是由当前shell环境I/O的编解码配置决定的，具体参见"中文支持"中对变量 process-coding-system-alist 的描述。
+		M-!		shell-command :执行一个shell命令，命令输出显示在一个名为*Shell Command Output*的缓冲区中。命令执行是阻塞的。加前导参数 C-u 则命令输出将插入到当前缓冲区的光标处。
+		M-|		shell-command-on-region :以当前选定文本块作为输入来执行一个shell命令。比如执行sort命令。命令执行是阻塞的。
+		M-&		async-shell-command :与 shell-command 类似，但命令是在后台执行的(通过为命令加 & 达成)，而输出则显示在一个名为*Async Shell Command*的缓冲区中。
+		shell :打开一个窗口进入Shell模式，其缓冲区名字默认为*shell*，为了打开多个shell缓冲区必须用rename-buffer或rename-uniquely命令重命名shell缓冲区名字。命令执行是非阻塞的。
+			说明：1、默认的，输入口令(密码)时会明文显示，在~/.emacs中加入如下一行即可改为暗文：(add-hook 'comint-output-filter-functions 'comint-watch-for-password-prompt)。
+				2、shell模式打开何种shell是按以下顺序决定的：首先查看变量 explicit-shell-file-name 的值，接着查看环境变量 ESHELL 的值，最后查看环境变量 SHELL 的值。
+				3、shell模式打开shell(一个交互式shell)时会在shell正常的启动文件之后再额外运行一个初始化文件，即 ~/.emacs_SHELLNAME ，如C Shell为 ~/.emacs_csh ，bash为 ~/.emacs_bash 。并且在shell模式中emacs还会把环境变量EMACS设置为 t ，把环境变量TERM(终端类型)设置为 emacs 。
+				4、shell模式打开shell时的命令行参数由变量 explicit-csh-args(C Shell) 或 explicit-bash-args(bash) 指定。
+				5、进入shell模式时emacs会自动进入当前默认目录，并且在shell模式中执行的 cd 、popd 、pushd 等命令会被emacs识别并根据这些命令自动改变当前默认目录，这样，如果不出错的话，查找文件的默认目录应当和shell模式中的当前目录保持一致。但，这个功能存在以下两个问题可能会导致出错：a、emacs只有在把 cd 、popd 、pushd 等命令输入到命令行的最开始时才能检测到它们，比如若一行中包含两个cd命令则等二个可能不会导致改变默认目录；b、emacs理解不了别名或其它任何会改变目录路径的程序，但，可以用修改变量 shell-cd-regexp 、shell-pushd-regexp 、shell-popd-regexp 的方法来帮助它识别这些命令。若不想在shell模式中的默认目录自动变来变去，可以将变量 shell-cd-regexp 、shell-pushd-regexp 、shell-popd-regexp 设为 nil 即可关掉该功能了。
+				6、在终端下用ls命令列出文件时为了能让不同类型文件显示不同颜色，常将ls定义为别名 alias ls='ls --color=auto' ，但这个别名在shell模式下工作不太正常，会多显示一些乱字符，而将这个别名去掉(即执行ls命令而不带--color参数)后工作就正常了(只是不会区别显示颜色)。为了兼顾两方面，可以将该别名定义写在~/.bash_profile中，而不要写在~/.bashrc中，逻辑上，登录进入终端会执行以上两个文件，而进入shell模式只会执行后者，这样，终端可以显示颜色，而shell模式也不会有乱码了。
+					为了能在shell模式下正常使用'ls --color'而不显示乱码，在~/.emacs中加入如下一行即可：(ansi-color-for-comint-mode-on) ，其会正确解释颜色控制字符，所以显示出的文件列表就会有各种颜色而无乱码了。参见"emacs配置小技巧"第81。
+					默认的，目录名显示为蓝色，在深色背景下看不清楚，那么可通过环境变量 LS_COLORS 来调整其颜色，比如变成白色并加上下划线，具体方法参见shell命令 dircolors 。
+				7、在Windows下安装了 cygwin 之后，可以在Windows下的 emacs shell 模式中使用 cygwin 提供的 bash ，效果也不错，但要注意以下几点：
+					a.默认的，Windows下的 Emacs 在打开 shell 模式时使用的命令名是从环境变量 SHELL 中取到的，其值为 C:/Program Files/emacs-23.1/bin/cmdproxy.exe ，是对DOS的一个封装。
+					b.为了使用 cygwin 提供的 bash ，可以直接将变量 explicit-shell-file-name 指定为bash的路径，如下：
+						(when (string-match "w32" (prin1-to-string window-system))
+						  (setq explicit-shell-file-name "C:/cygwin/bin/bash.exe"))
+					c.Windows下的 emacs shell 模式打开 cygwin bash 时进入的是交互式非登录shell，其读入的初始化文件为 ~/.bashrc 。
+					d.Windows下的 cygwin 终端打开 bash 时进入的是交互式登录shell，其读入的初始化文件为 ~/.bash_profile 。
+					e.但由于Windows下的 emacs 并不是从cygwin环境中启动的(这里的Emacs是一个纯的Windows应用，而非cygwin下的Emacs)，所以不会从交互式登录shell中继承环境，所以为两种方式的shell指定统一的初始化信息的办法是，将所有初始化信息均写入 ~/.bashrc 中，而在 ~/.bash_profile 中只是调用一下 ~/.bashrc 。
+					f.关于不同模式shell的初始化，参见"关于bash"的"调用"一节。
+				8、shell模式在退出登录后，其缓冲区依然保留，可以依据进程状态的改变来自动杀掉该缓冲区，具体参见"emacs配置小技巧"第95。
+				9、如果在shell模式下的命令输出中有乱码，可以执行 universal-coding-system-argument 指定编码方式后重新进入一次shell模式，亦可以不用退出当前shell模式而执行 set-buffer-process-coding-system 来为后续的命令输出指定编码方式，如果指定了正确的编解码方式，新执行命令的输出就不会有乱码了。
+					如果想自动为shell模式指定特定的输入输出编解码方式，而不是每次进入都手工指定，则只需正确设置变量 process-coding-system-alist 即可，具体参见"中文支持"。
+					实验知：在Win7下用emacs-23.3.1加cygwin bash打开的shell模式其默认编解码为cn-gb，显示中文文件名时会乱码，改成utf-8以后就正常了；而在WinXP下用emacs-23.1.1加cygwin bash打开的shell模式应配置其编解码为cn-gb才能在显示中文文件名时不乱码。
+			C-c C-c		comint-interrupt-subjob :中止所执行命令。
+			C-c C-\		comint-quit-subjob :退出所执行命令。Send quit signal to the current subjob.
+			C-c C-z		comint-stop-subjob :挂起所执行命令。
+			comint-continue-subjob :继续挂起的命令。Send CONT signal to process buffer's process group.
+			C-c C-d		comint-send-eof :针对所执行命令结束输入。Send an EOF to the current buffer's process.
+			RET		comint-send-input :以当前行内容作为命令执行。shell模式里可以在窗口内移动光标并进行修改，修改后的当前行按回车即可直接执行，emacs会把这行内容复制到命令提示符后。
+			C-c RET		comint-copy-old-input :将当前行内容复制到命令提示符后，但并不执行，可以编辑后再回车而执行。可以将多个行内容复制到命令提示符后，每次插入到开头，然后组合编辑再执行。
+			C-c SPC		comint-accumulate :输入一个换行符(newline)但并不执行(发送 sent)命令，因此可以输入多行命令，最后以一个整体执行所有命令，在命令历史表中其也被作为一个整体对待。
+			TAB		comint-dynamic-complete :自动补足。
+			C-c .		comint-insert-previous-argument :在光标处插入上一个命令的最后一个参数，若上一命令没有参数则插入命令本身。数字前辍指明第几个参数。反复执行该命令则会依次换成更前一个命令的对应参数。类似于bash中的命令 M-. 。
+			M-p 或 C-UP		comint-previous-input :上一命令。
+			M-n 或 C-DOWN		comint-next-input :下一命令。
+			C-c C-l		comint-dynamic-list-input-ring :显示输入命令环(input command ring)的内容。
+			M-r		comint-previous-matching-input :在命令历史表中以正则表达式查找上一个匹配命令。
+			M-s		comint-next-matching-input :在命令历史表中以正则表达式查找下一个匹配命令。
+			C-c M-r		comint-previous-matching-input-from-input :在命令历史表中查找上一个与当前已经输入的命令开头相同的命令，反复执行该命令则查找更上一个匹配命令。
+			C-c M-s		comint-next-matching-input-from-input :在命令历史表中查找下一个与当前已经输入的命令开头相同的命令，反复执行该命令则查找更下一个匹配命令。若到头则从尾部开始往前找。
+			C-c C-u		comint-kill-input :在命令行上往回删除到命令开始处。
+			C-c C-w		backward-kill-word :在命令行上往回删除一个词。
+			C-c C-o		comint-delete-output :清除最后一个已执行命令的输出。若程序的输出太多的话该命令就很有用了，可以帮助清理屏幕。
+			C-c C-s		comint-write-output :保存最后一个已执行命令的输出到一个指定文件中，若有前导参数则追加。
+			C-c C-r 或 M-C-l		comint-show-output :使窗口移到最后一条命令的输出结果的开头。
+			C-c C-e		comint-show-maximum-output :使窗口移到最后一条命令的输出结果的结尾。
+			C-c C-p		comint-previous-prompt :移动到上一输出组。"输出组"由命令和其输出组成。
+			C-c C-n		comint-next-prompt :移动到下一输出组。"输出组"由命令和其输出组成。
+			C-c C-f		shell-forward-command :在当前命令行上将光标移动到下一个命令尾部。针对的是多个命令在一行的情况，比如由管道串起的命令串。
+			C-c C-b		shell-backward-command :在当前命令行上将光标移动到上一个命令头部。针对的是多个命令在一行的情况，比如由管道串起的命令串。
+			变量 ansi-color-for-comint-mode :其值决定了对输出(主要是针对 ls --color 的输出)中的显示属性控制序列(SGR control sequences)的处理方法，为nil时什么也不做，为符号filter时将滤除控制序列，为其它值(比如t)时则将控制序列翻译成文本属性(text properties)以正确控制输出的显示效果。相对应的，命令 ansi-color-for-comint-mode-off 、 ansi-color-for-comint-mode-filter 和 ansi-color-for-comint-mode-on 分别为其设置对应的值。
+			变量 comint-mode-hook 和 shell-mode-hook :shell模式进入时的勾子变量，comint-mode-hook 和 shell-mode-hook 按顺序执行。
+			变量 comint-mode-map 和 shell-mode-map :shell模式的局部键位映射图。
+			shell-toggle-cd 和 shell-toggle :由第三方包 shell-toggle.el 提供，实现了在当前文档与*shell*缓冲区间的快速切换以及切换到shell时自动进入当前文档所在目录的功能。其配置的例子参见"emacs配置小技巧"第69。
+		term :打开一个窗口进入Term模式，与Shell模式类似，其也是运行一个子shell并通过emacs缓冲区进行输入输出，以便在其中进行命令交互。与Shell命令不同的是它将提示执行哪个程序来进入终端，但程序命令不能带参数，可以写一个脚本里面执行带参数的命令来绕过这一限制。完整的终端模拟被使能(Full terminal emulation is available)，就好象真的在所运行程序生成的终端里一样，导致大部分编辑功能都不可以使用了，观察知，一些C-x命令映射到C-c上了，比如用 C-c C-b 来弹出缓冲区列表。
+		terminal-emulator :与Term模式类似，但它所运行的程序可以指定参数，如：adb shell 。是一个完整的终端模拟。
+			C-^ C-h		te-escape-help :帮助。
+			C-^ w		te-edit :进入编辑状态，至少移动功能可以使用了，退出用 C-c C-c 。
+			C-^ x		te-escape-extended-command :执行扩展命令，如：kill buffer ，具体参见帮助。
+			C-^ o		other-window :切换窗口。
+			C-^ b		switch-to-buffer :切换缓冲区。
+		cd :改变当前缓冲区的默认目录为指定目录。环境变量 CDPATH 也是有效的。
+		pwd :查看当前缓冲区的默认目录。
+		locate :运行程序 locate 来查找指定文件，其输出放在名为 *Locate* 的缓冲区中，指定前导参数则提示出将调用的查找命令的命令行。使用的默认查找命令为 locate ，该命令是由变量 locate-command 指定的。
+		getenv :取得一环境变量的值。指emacs运行所处子shell的环境。
+		setenv :设置(增加)环境变量，带前导参数则移除环境变量(即使设置一个环境变量的值为空，它也是存在的，并不会被移除)。指emacs运行所处子shell的环境。
+	**EShell(Emacs Shell)模式：其缓冲区名字为*eshell*，为了打开多个eshell缓冲区必须用rename-buffer或rename-uniquely命令重命名shell缓冲区名字。
+		说明：0、EShell是一个完全由 Emacs Lisp 实现的shell，而不是象shell模式那样只是一个底层shell与用户输入的中介，EShell模式会首先自行解释用户输入，因此具有更强的功能。
+			1、eshell模式打开的是当前shell(即启动emacs的shell)的一个子shell，但它维护一些自己的环境属性，如别名和命令历史记录等。
+			2、其有很多辅助文件都存在目录 ~/.eshell 下，如命令历史记录文件等，这样可保存信息以便下次会话中使用。
+			3、保存 alias 的文件缺省为 ~/.eshell/alias (由变量 eshell-aliases-file 指定)，在eshell模式中执行 alias 命令将立即更新 ~/.eshell/alias 文件以保存所定义，那么在以后的会话中就都可以使用了，如：定义别名：alias ll 'ls -l' RET 或取消别名：alias ll RET 。注意：eshell中的alias命令与bash中的alias命令不是一回事，二者的语法是不同的；eshell中的alias命令中别名的名字与值之间应以空格分隔而不是等号；也可以直接修改 ~/.eshell/alias 文件，将想要的别名都加进去，但要注意别名的值不要用引号括起来(曾经用了单引号别名就不起作用了)，修改完后应重启一下eshell；另外，eshell中的alias命令所定义的别名在使用时加的参数好象不起作用。
+			4、按Home键不要回到行首而是回跳一个参数单位，在~/.emacs中加入如下行：(add-hook 'eshell-mode-hook '(lambda () (local-set-key [home] 'eshell-backward-argument))) 。
+			5、启动telnet、vim等命令时启动ansi-term，在~/.emacs中加入如下行：(add-hook 'eshell-first-time-mode-hook '(lambda () (setq eshell-visual-commands (append '("mutt" "vim" "screen" "lftp" "ipython" "telnet") eshell-visual-commands)))) 。
+		eshell :进入Eshell模式。
+	**Dired模式：目录编辑模式(DIRectory EDiting mode)。该模式下将直接对文件操作，如删除就是删除文件。
+		C-x d		dired :输入目录名进入Dired模式。打开文件时指定一个目录也进入该模式。
+		C-x 4 d		dired-other-window :
+		C-x 5 d		dired-other-frame :
+		find-dired :执行find命令并在其查找到的文件清单上用dired模式做进一步的处理。
+		find-name-dired :先询问查找目录，然后询问一个shell文件名通配模式(无须引起)，最后将查找结果显示在dired模式中。所执行命令的例子：find . \( -name '*.cpp' \) -exec ls -ld {} \; 。
+		find-grep-dired :先询问查找目录，然后询问一个grep正则表达式(其中还可以包含grep选项)，最后将所有包含匹配内容的文件列表显示在dired模式中。所执行命令的例子：find . \( -type f -exec grep -q messageUID {} \;  \) -exec ls -ld {} \; 。
+		tar-mode :进入Tar模式，其通过一个dired风格的界面访问tar档案文件。打开.tar文件时自动进入该模式。
+			^		dired-up-directory :回上一目录。
+			s		dired-sort-toggle-or-edit :翻转文件排序规则。默认的按文件名排序，可改为按时间排序。
+			p 或 C-p 或 UP		dired-previous-line :上一项。
+			n 或 SPC 或 C-n 或 DOWN		dired-next-line :下一项。
+			<		dired-prev-dirline :上一目录项。
+			>		dired-next-dirline :下一目录项。
+			M-C-p		dired-prev-subdir :上一子目录项。
+			M-C-n		dired-next-subdir :下一子目录项。
+			M-{ 或 * C-p		dired-prev-marked-file :上一已标记文件。
+			M-} 或 * C-n		dired-next-marked-file :下一已标记文件。
+			g		revert-buffer :刷新。
+			y		dired-show-file-type :显示文件类型。
+			v		dired-view-file :查看文件内容，进入查看模式(view mode)。
+				q 或 C-c		:退出查看模式。
+				s		:递增查找。
+				=		:信息，如行数等。
+			f 或 e		dired-find-file :立刻打开该项在当前窗口。
+			RET		dired-advertised-find-file :
+			o		dired-find-file-other-window :立刻打开该项在另一窗口，光标跳转到那个窗口。
+			MOUSE-2		dired-mouse-find-file-other-window :
+			C-o		dired-display-file :立刻打开该项在另一窗口，但光标不动。
+			0..9 命令		digit-argument :对当前文件及其后n个文件进行操作。
+			-		negative-argument :
+			d		dired-flag-file-deletion :标记为待删除(D)。
+			% d		dired-flag-files-regexp :正则表达式查找文件标记为待删除(D)。
+			#		dired-flag-auto-save-files :将所有自动保存文件标记为待删除(D)。去掉这些标记为：C-u # 。
+			~		dired-flag-backup-files :将所有备份文件标记为待删除(D)。去掉这些标记为：C-u ~ 。
+			x		dired-do-flagged-delete :执行待删除标记。
+			m		dired-mark :标记为待操作(*)。
+			% m		dired-mark-files-regexp :正则表达式查找文件标记为待操作(*)。
+			t 或 * t		dired-do-toggle :反向选择待操作标记。即使选上的变为未选，未选的变为选上。
+			u		dired-unmark :去掉标记。光标下移。
+			BS 或 * BS		dired-unmark-backward :去掉上一个标记。光标上移。
+			M-BS 或 * ?		dired-unmark-all-files :去掉所有标记。
+			* !		dired-unmark-all-marks
+			C		dired-do-copy :立即拷贝当前文件或所有待操作文件。对目录操作时如果目录非空则不予执行，在~/.emacs中加入一行 (setq dired-recursive-copies 'top) 即可。
+			% C		dired-do-copy-regexp
+			D		dired-do-delete :立即删除当前文件或所有待操作文件。对目录操作时如果目录非空则不予执行，在~/.emacs中加入一行 (setq dired-recursive-deletes 'top) 即可。
+			R		dired-do-rename :立即移动当前文件或所有待操作文件。
+			% R 或 % r		dired-do-rename-regexp
+			Z		dired-do-compress :立即压缩或解压缩当前文件或所有待操作文件。用gzip压缩。可解压compress文件。
+			Q		dired-do-query-replace-regexp :对当前文件或所有待操作文件进行查询替换操作。普通文本或正则表达式。
+			A		dired-do-search :在当前文件或所有待操作文件中进行查找操作，普通文本或正则表达式，在第一个找到处停止，执行 M-, 命令继续查找下一个匹配。
+			L		dired-do-load :装入(并非打开)所有待操作文件(应是Emacs Lisp文件)。Load the marked (or next ARG) Emacs Lisp files.
+			l		dired-do-redisplay :相当于刷新。Redisplay all marked (or next ARG) files.
+			G		dired-do-chgrp
+			M		dired-do-chmod
+			O		dired-do-chown
+			H		dired-do-hardlink
+			% H		dired-do-hardlink-regexp
+			S		dired-do-symlink
+			% S		dired-do-symlink-regexp
+			B		dired-do-byte-compile
+			P		dired-do-print
+			X 或 !		dired-do-shell-command :在当前文件或所有待操作文件上执行命令，即以当前文件或所有待操作文件做为输入，如sort命令。命令行中可以*号代表这些文件。我执行grep命令时注意到：命令行必须带上*号，否则找出的摘要前没有文件名标识。
+			=		dired-diff :用diff将当前文件与指定文件进行比较。
+			M-=		dired-backup-diff :用diff将当前文件与其备份文件进行比较。
+			+		dired-create-directory :创建子目录。
+			C-_ 或 C-x u		dired-undo :
+			q		quit-window :退出。
+
+			$		dired-hide-subdir
+			&		dired-flag-garbage-files
+			.		dired-clean-directory
+			?		dired-summary
+			a		dired-find-alternate-file :在当前这个buffer中打开当前光标所在的这个文件，即dired这个buffer将关闭而代之以开辟一个新buffer来打开指定文件。
+			h		describe-mode
+			i		dired-maybe-insert-subdir
+			k		dired-do-kill-lines
+
+			ESC $		dired-hide-all
+			ESC C-u		dired-tree-up
+			ESC C-d		dired-tree-down
+
+			% g		dired-mark-files-containing-regexp
+			% l		dired-downcase
+			% u		dired-upcase
+
+			* u		dired-unmark
+			* m		dired-mark
+			* s		dired-mark-subdir-files
+			* c		dired-change-marks
+			* %		dired-mark-files-regexp
+			* @		dired-mark-symlinks
+			* /		dired-mark-directories
+			* *		dired-mark-executables
+		C-x C-d		list-directory :弹出一个缓冲区显示指定目录的内容(类似于ls命令的输出列表)，但该缓冲区并非dired模式，而仅仅是一个View用于查看内容，其打开速度比dired要快的多。加前导命令则显示内容类似于命令ls -l的输出。

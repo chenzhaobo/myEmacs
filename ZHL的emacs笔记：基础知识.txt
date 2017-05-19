@@ -1,0 +1,317 @@
+
+本文档是"ZHL的emacs笔记"的一部分。
+
+本文档的格式是为了快速检索与浏览而专门调整的，最好用emacs来查看，将tab
+缩进显式设为3个字符，设置不自动换行，并使用outline模式，以提高学习和工
+作效率。具体配置可参考文档"ZHL的emacs笔记：配置小技巧"。
+
+本文档主要讲述的是emacs的几个基本概念，包括模式、状态行、辅助输入区、窗
+口和窗格等，当然，主要是本人在使用过程中所关注的细节以及积累的经验。
+
+希望本文档能给emacs同好一些帮助，任何问题或建议可以发信到 seaxii@126.com 来讨论。
+
+文档正文----------------------------------------------------------------
+
+**命令行：emacs options files
+	+linenum:columnnum file ：在每个要打开的文件名前可指定行列号以便打开时直接定位到指定的行列位置，注意可为多个文件分别指定行列号，但行列号必须在文件名前，即，注意顺序。
+	-d displayname 或 -display displayname ：由displayname指定X Server并打开X窗口的emacs，相当于环境变量 DISPLAY 的功能，并且设置内部环境变量 DISPLAY 的值为displayname(用 getenv 命令可查到)。注意，该选项必须是命令行中第一个选项。如：emacs -d 10.194.64.233:0.0 &
+	-nw 或 --no-windows ：不打开X窗口而强制运行在文本终端下。注意，该选项必须是命令行中第一个选项。有时在X系统下指定该参数可能导致启动emacs时读取初始化配置文件(~/.emacs)中的X相关项失败，此时可指定 -q 参数不装入初始化配置。
+	-q 或 --no-init-file ：启动时不装入用户初始化配置文件 ~/.emacs 和全局初始化配置文件 default.el 。
+	-no-site-file ：启动时不装入站点初始化配置文件 site-start.el 。
+	-u user 或 --user=user ：启动时装入指定用户的初始化配置文件 ~user/.emacs 以代替当前用户自身的初始化配置文件 ~/.emacs ，GNU鼓励资源共享。
+	--debug-init ：使能调试初始化文件。若 ~/.emacs 文件中有错，则启动过程会中断，但一般从提示信息看不出来错在哪里，加上该选项再启动则可以很快定位出问题所在。
+	-l file 或 --load=file ：装入Lisp库 file 中的函数。
+	-f function 或 --funcall=function ：调用Lisp函数 function 以无参方式。
+	--eval=expression 或 --execute=expression ：对Lisp表达式 expression 求值。
+	-batch 或 --batch ：启动emacs运行在批处理模式(batch mode)下，被编辑的文本不会被显示出来。该模式是为了在shell脚本、makefile等中运行Emacs Lisp程序，通常是连带使用 -l 或 -f 选项以调用Lisp程序进行批处理(do the batch processing)。该模式暗示(imply)了 -q 选项，并在处理完所有命令后退出。
+**状态行：在emacs里称为 mode line ，在每个窗口的底部，其基本形式如下：
+        -CS:CH-  BUF    (MAJOR MINOR)--LINE--POS------
+	CS    :Coding System，标识该缓冲区的编码方式，一般ASCII文件(即常态、无编码转换)显示为一个横杠"-"，以cn-gb编码方式打开的文件显示为一个"c"。
+	:     :冒号所在位置可能会变为一个其它字串，用于描述EOL(End Of Line)类型。有几种不同的行分隔风格，Unix风格(Unix convention)用 newline 来分隔行，MS-DOS风格(MS-DOS convention)用 CRLF (carriage-return linefeed)来分隔行，而Macintosh风格(Macintosh convention)只用 carriage-return 来分隔行。如果当前缓冲区文件使用 newline (Unix风格)则冒号会变为 : 或 (Unix) ，如果使用 CRLF (MS-DOS风格)则冒号会变为 \ (反斜线，backslash)或 (DOS) ，如果只使用 carriage-return (Macintosh风格)则会变为 / (正斜线，forward slash)或 (Mac) 。变量 eol-mnemonic-unix 、eol-mnemonic-dos 、eol-mnemonic-mac 、eol-mnemonic-undecided 的值分别指明了几种情况下应当出现在冒号位置处的字符串，可以手工修改它们为自己方便识别的串；在不同操作系统里它们的值也可能会有所不同，比如变量 eol-mnemonic-dos 在Windows里其值为 \ ，而在Linux里其值为 (DOS) 。关于如何转换文件风格，参见"中文支持"。
+	CH    :只读和/或修改标识，非只读且未做改动时显示为"--"，非只读且做了改动时显示为"**"，只读且未做改动时显示为"%%"，只读且做了改动时显示为"%*"。
+	BUF   :缓冲区名字，一般与文件名相同，也可改为不同，或根本不与文件相关联。
+	MAJOR :主模式名。
+	MINOR :辅模式名，可能有多个。
+	LINE  :行号。
+	POS   :当前位置相对于整个文件的百分比。
+	说明：1、状态行内容以横杠(dash)开始和结束。
+			2、打开附加功能时可能还会增加显示字段，比如：时钟、列号等。
+			3、切换输入法时会在 CS 前插入输入法名称。
+			4、变量 mode-line-format 保存了状态行的内容，通过修改该变量可以调整状态行内容。一个简单例子可参见"emacs配置小技巧"第17。
+**模式：模式是针对缓冲区内容的不同而对某方面功能的加强，比如写文章和写程序，其侧重点不同，则进入的模式不相同，编辑时的功能亦有差异。
+	**说明：1、模式分为主模式和辅模式，一个编辑缓冲区每次只能且必须处于一种主模式中，但同时还可以处于多个辅模式中。
+		2、可以显式地为当前的缓冲区选择(主/辅)模式，执行相应的模式名命令即可，例如：M-x lisp-mode 即打开了 Lisp 模式。
+		3、退出一种主模式的办法是进入另一个主模式。
+		4、大多数情况下，在打开文件时Emacs会根据文件名以及出现在文件里面的特殊字符串自动选择对应的模式。
+		5、当前缓冲区的主模式可查看变量 major-mode 而得到，主模式的名称字串可由变量 mode-name 得到。
+		6、当打开一个文件时，命令 find-file 会先依据各种条件选择一个主模式并切换到该主模式(会触发主模式的勾子)，然后才开始读取文件内容到缓冲中，以及完成缓冲区的设置(最后还会触发勾子 find-file-hook )，所以，在主模式的勾子函数中，不要期望某些变量，比如 buffer-read-only 和 buffer-file-coding-system ，已经被设置，换句话说就是，主模式的勾子函数中不应依赖某些(设置)变量来安排逻辑。参考 major-mode / default-major-mode 的帮助。
+		7、主模式可以进行派生定义，即可以以一个主模式为基础，派生定义出另一个主模式。比如很多主模式象 log-edit-mode 和 mail-mode 等都是以 text-mode 作为基类主模式进行定义的。
+			在启动一个派生主模式时，要注意其基类主模式的勾子也会运行，其中的设置可能会对派生主模式造成不良影响，为避免这种情况，可以在基类主模式的勾子中检查变量 major-mode 的值(其为当前正在启动的主模式的符号)并针对基类主模式和子类主模式做出不同的反应。例子参见下面对"变量 text-mode-hook"的描述。
+	**自动选择主模式的逻辑：
+		1、通过文件名：打开文件时将根据文件名自动选择对应的模式，这种文件名与模式之间的对应关系是由变量 auto-mode-alist 来控制的，它是一个表，表里面的每一个元素的形式为：(REGEXP . MODE-FUNCTION)，即文件名匹配了 REGEXP 的文件将使用 MODE-FUNCTION 打开的模式。修改绑定关系参考"emacs配置小技巧"第27。
+		2、通过文件内容：若文件的第一个非空白行包括形式为 -*-MODENAME-*- 的子串，则表示要针对该文件使用名字为 MODENAME 的模式，例如若打开文件的第一行为 ;-*-Lisp-*- 则自动进入 Lisp 模式。
+		3、通过文件内容所选择的模式将顶替掉通过文件名选择的模式。而如果文件名与变量 inhibit-first-line-modes-regexps 指定的正则表达式匹配，则该文件不会去依据首行内容推断出主模式。
+		4、通过文件内容选择模式还有另一种形式，这种形式可以同时特化一些变量：-*- mode: MODENAME; [VAR: VALUE; ...] -*- ，例如：;; -*- mode: Lisp; fill-column: 75; comment-column: 50; coding: gb2312; -*- 则自动进入 Lisp 模式并设置两个变量的本地值以及指定本文件的编码方式。
+		5、对于脚本文件：如果通过文件名没有认出主模式而文件内容首行能与变量 auto-mode-interpreter-regexp 指定的正则表达式匹配，即文件首行是以 #! 开头且后跟一个文件路径的，则认为该文件是个脚本文件，而首行内容中的文件路径指明了脚本解释器(interpreter)，根据解释器的名字，如 perl、awk、bash 等，就可决定选用哪个主模式了，这个对应关系是由变量 interpreter-mode-alist 来控制的，其形式和功能与 auto-mode-alist 类似。需要注意的是，如果这种文件的文件名能被认出而选择了主模式，则这个机制会失效，而通过文件名选择的主模式也不会再变了。
+		6、因为脚本文件的首行有特定意义，所以可以在其第二行加上 -*- 形式的指令字串，此时会依据这个串分析出所要的主模式以及特化变量等，而这个主模式也同样会顶替掉通过文件名选择的模式(如果有的话)。
+		7、本地变量列表(local variables list)：若某文件的头两行都有特殊意义则 -*- 形式的指令字串就不能用了，这时可以用本地变量列表的方式来指定主模式和特化变量，以下是一个例子以及这种方法的特性说明。
+			例：	;; Local Variables: **
+					;; mode:lisp **
+					;; coding: utf-8 **
+					;; comment-column:0 **
+					;; comment-start: ";; " **
+					;; comment-end: "**" **
+					;; End: **
+			本地变量列表的特性说明：a.必须写在文件靠近末尾的地方，要距离文件末尾3000个字符以内，并且必须在文件最后一页上如果分页了的话，否则将不起作用，这主要是为了提高处理效率。
+				b.必须以包含子串 Local Variables: 的一行开始，并以包含子串 End: 的一行结束，之间可以有多行，每一行包含形式为 VARIABLE:VALUE 的子串。
+				c.每行中除了以上子串其它部分都应当相同，这样在处理时这些部分会被认出并丢弃，那么剩下的部分就是emacs所要处理的串。
+				d.VALUE不会被求值，而是照字面意义使用。The VALUEs are not evaluated; they are used literally.
+				e.变量名 mode 是有特殊意义的，并不是一个真的变量，它用于设定主模式。需要注意的是，该语句应该写在本地变量列表中的第一行，因为大部分主模式在初始化的时候都会杀掉所有本地变量，所以在这之前设定的值通常会不起作用。该变量也可用于设定辅模式，事实上，可以多次使用该变量分别设定主辅模式，但一般不这么用，因为辅模式不应特定于某文件而应特定于某主模式，辅模式反映了一个人的偏好，但不应将这个偏好强加给别人。
+				f.变量名 eval 是有特殊意义的，并不是一个真的变量，它会导致其值被当作一个表达式被求值，而返回值会被忽略。这带来一个风险，即恶意代码可能会被无条件执行。变量 enable-local-eval 用于控制 eval 变量是否被求值，为t则求值，为nil则忽略，其它值则到时询问，默认值为 maybe ，但在交互方式下执行 normal-mode 命令时将忽略该变量而总是对 eval 变量求值。
+				g.如果一个文件内容中既有开头的 -*- 形式的指令字串又有末尾的本地变量列表，那么它们都将被按顺序(从头至尾)处理，而对于同一个变量(包括模式)，后设定的值将顶掉先设定的值。
+		8、当判断主模式失败时变量 default-major-mode 指定了默认会启用的模式，其默认值为 fundamental-mode (即基本模式，无特殊行为)，可以改变它以改变默认启用的主模式，若其值为 nil 则使用上一个当前缓冲区所使用的主模式。
+		9、命令 normal-mode 可以重新判断当前缓冲区而自动选择合适的主模式，这常用于改变了一个缓冲区的主模式后想再回到原先的主模式时，或文件内容发生变化而应当能自动选择出一个更合适的主模式时。该命令也会处理变量的本地特化(包括本地变量列表)如果有的话。该命令也是被 find-file 命令自动调用的。
+		10、变量 enable-local-variables 用于控制 -*- 形式的指令字串和本地变量列表是否被处理，为t(默认值)则处理，为nil则忽略，其它值则到时询问，但在交互方式下执行 normal-mode 命令时将忽略该变量而总是处理 -*- 形式的指令字串和本地变量列表。
+**基本命令：C为Ctrl键，C-x即为Ctrl-x(按Ctrl键同时按x)；M为Meta键，映射到PC键盘上即为Alt或ESC或Windows键，M-x 为 ESC x(按ESC键，释放，再按x) 或 Alt-x(按Alt键同时按x)；
+	M-x 命令名		execute-extended-command :执行命令(函数)，任何一个绑定键都有其对应的命令名，但并不是每个命令都会绑定快捷键，所以有些命令必须用这种方式执行。以下部分提到命令时将省略M-x前导键。
+	C-g		keyboard-quit :强势终止。发出quit信号，对于正在执行的Lisp代码，该命令导致直接终止代码执行。中断辅助输入区(minibuffer)中的命令输入，一般情况下用该命令跳出辅助输入区。
+	ESC ESC ESC 或 M-ESC ESC 或 M-C-[ C-[		keyboard-escape-quit :弱势终止。退出交互命令如查询替换；取消前导命令或文本块的选择；跳出辅助输入区(minibuffer)或递归编辑；取消当前特殊目的缓冲区的使用或返回一个窗口(即关闭其它窗口只留当前窗口)。这个键的定义是因为很多PC程序使用ESC作为"跳出"命令。该命令与C-g最大的不同在于它不能终止一个正在运行的命令，还有，它不会取消正在进行的录制宏的操作。
+	C-x C-c		save-buffers-kill-emacs :退出。不过一般Emacs很笨重, 一旦起动就不轻易退出. 所以比较常用的是C-z。
+	C-z 或 C-x C-z		suspend-emacs :把Emacs暂停，回到命令行，即挂起。当你下次再需要编辑时，打fg %emacs就可以把Emacs唤醒。
+	version :查看当前emacs的版本等信息，其为命令 emacs-version 的别名。另有变量 emacs-version ，其值为当前emacs的版本字串。
+	byte-compile-file RET session.el RET  :编译emacs lisp文件session.el为session.elc(.emacs亦可被编译，编译后名为.emacsc)，el文件可以被编译，是为了加快装入及执行速度。
+	byte-recompile-directory :重编译目录，做法类似于make，只对需要编译(比如作了修改)的文件才进行编译。
+	load-library :装入库，先查找"库名.elc"，找不到再找"库名.el"，找不到才找"库名"。将在变量 load-path 所指定的目录列表中进行查找。其为内置函数load的前端，load函数只在内部使用。其与load-file命令类似。
+	toggle-truncate-lines :翻转"不自动换行(截短行显示)"功能。是指显示时是否自动换行，与 auto-fill-mode 不是一回事。该行为由变量 truncate-lines 决定，若要在启动时打开该功能，在~/.emacs加入一行：(setq-default truncate-lines t) 即可。
+	line-number-mode :翻转行号模式。默认为t。打开后，将在状态行上显示当前光标所处行号。
+	column-number-mode :翻转列号模式。打开后，将在状态行上显示当前光标所处列号。默认是关闭的，在~/.emacs加入一行：(column-number-mode t) 即可在启动时打开列号模式。
+	show-paren-mode :翻转括号显示模式。打开后，当光标在一个括号上时，将高亮显示成对的另一个括号。默认是关闭的，在~/.emacs加入一行：(show-paren-mode t) 即可在启动时打开括号显示模式。
+	display-time-mode :翻转时钟模式。打开后，将在状态行上显示当前时间。默认是关闭的，在~/.emacs加入一行：(display-time) 即可在启动时打开时钟模式。还有两个变量控制显示格式，display-time-24hr-format 决定是否用24小时制，display-time-day-and-date 决定是否同时显示日期，默认都是关闭的，可以在显示时间前加入以下两行来打开：(setq display-time-24hr-format t) 和 (setq display-time-day-and-date t) 。
+	scroll-bar-mode :翻转滚动条模式。决定是否显示滚动条。
+	hl-line-mode :翻转高亮当前行模式在当前缓冲区。其会始终将光标所在当前行高亮出来。其是否开启的状态保存在同名变量 hl-line-mode 中。可以在某模式的勾子上加裁之使其只针对某些缓冲区打开，比如：(add-hook 'text-mode-hook 'hl-line-mode) 。
+	global-hl-line-mode :翻转高亮当前行模式在所有缓冲区。其会始终将光标所在当前行高亮出来。其是否开启的状态保存在同名变量 global-hl-line-mode 中。若要使其默认打开，只需在~/.emacs加入一行：(global-hl-line-mode t) 即可。
+	auto-image-file-mode :翻转自动打开图像文件模式。打开后，当打开一个图像文件时会根据文件名正确认出文件类型打开并显示之，若认不出文件类型或分析文件内容失败则还以正常方式(文本方式)打开这个文件。默认是关闭的，在~/.emacs加入一行：(auto-image-file-mode) 即可在启动时开启自动打开图像文件模式。是否开启的状态保存在同名变量 auto-image-file-mode 中。经实验，Windows下不能工作，Linux下可以工作但有些图像文件的内容处理不了。
+	self-insert-command :任何可打印字符按键都绑定的是这个命令。
+	list-colors-display :列出了所有的颜色及其名称。
+	normal-mode :重新判断当前缓冲区而自动选择合适的主模式。该命令也是被 find-file 命令自动调用的。
+	set-variable :设置变量的值。只能临时性的改变变量值而影响emacs的行为，在新会话(或其它缓冲区)中变量将回复默认值。为了永久改变变量值，需在.emacs文件中加入以下一行：(setq-default 变量名 变量值如nil或t)。
+	customize :打开一个定制缓冲区，在里面可以对emacs的各种参数进行配置。
+**菜单：
+	M-` 或 F10		tmm-menubar :打开文本模式菜单(Text-Mode Menubar)，PgUp转入菜单选项并进行选择或直接按菜单项快捷键或直接按上下键进行选择。
+	menu-bar-mode :显示或隐藏菜单条。默认是打开的，在~/.emacs加入一行：(menu-bar-mode -1) 即可在启动时隐藏菜单条。
+	tool-bar-mode :显示或隐藏工具条。默认是打开的，在~/.emacs加入一行：(tool-bar-mode -1) 即可在启动时隐藏工具条。
+**前导命令：用在其它命令之前，使其后的命令有特殊效果。
+	反向参数：前导命令，使其后的命令反向执行。
+		C-- 或 M-- 或 M-C--		negative-argument :
+	重复参数：前导命令，使其后的命令重复多次执行。
+		C-数字 或 M-数字		digit-argument :指定其后的命令重复执行多少次。如：M-20 C-n 向下移20行；M-10 C-x u Undo10次。
+		C-u 数字		universal-argument :类似于digit-argument命令，但该命令可以不带数字参数，此时将直接重复其后命令4次，而且若为'C-u C-u'则重复16(4的幂)次，依此类推。
+**minibuffer操作：主要是对历史列表(history list)的操作。很多与用户的交互都在辅助缓冲区(minibuffer)里进行，比如要求用户输入一个命令参数时。虽然辅助缓冲区的具体行为依赖于当时的运行环境，但象使用历史记录等操作还是有一定通用性的，因为很多操作都会维护自己的历史列表。
+	RET 或 C-j		exit-minibuffer :结束输入。
+	C-g		minibuffer-keyboard-quit :取消。
+	M-n 或 DOWN		next-history-element :翻出历史列表中的下一条。
+	M-p 或 UP		previous-history-element :翻出历史列表中的上一条。
+	M-s		next-matching-history-element :在历史列表中向下查找。
+	M-r		previous-matching-history-element :在历史列表中向上查找。
+	M-?		session-minibuffer-history-help :列出所有历史项以便直接选择。
+	C-tab		file-cache-minibuffer-complete :用于文件名补齐。不常用。
+**命令的重复执行：重复执行以前的命令。执行过的命令会放在一个历史列表中。
+	复杂命令的重复执行：重复执行以前执行过的复杂命令。复杂命令是指需要在辅助缓冲区(minibuffer)里输入补充性内容的命令，比如查询替换操作。
+		C-x ESC ESC 或 C-x M-:		repeat-complex-command :将上次执行的复杂命令以lisp表达式的形式放在辅助缓冲区中，可对其修改，RET后执行之。
+	简单命令的重复执行：重复执行以前执行过的简单命令。简单命令应该是指所有命令。
+		C-x z		repeat :重复执行刚刚执行过的命令，若指定参数则新参数应用于前面那个命令上，否则前面命令的参数(如果有的话)保持不变。该命令类似于vi里的点(.)命令。
+**文件、缓冲区与窗口：
+	**说明：1、缓冲区(buffer)与文件(file)是两个概念，emacs里面编辑的所有东西都称为缓冲区。一般的，一个缓冲区与一个文件相关联，打开一个文件时就建立了一个关联的缓冲区，其缓冲区名字与文件名相同，但也可改为不同；文件必定要关联到缓冲区，但缓冲区可以不关联到文件而独立存在，可以单独建立一个缓冲区用以暂存数据。
+		2、emacs可以打开多个缓冲区而不一定要显示出来；窗口可以在各个缓冲区之间切换；多个窗口可以同时编辑一个缓冲区，它们会自动同步。
+		3、emacs会自动创建一些特殊用途缓冲区，如：每次打开emacs都会创建一个空的名为*scratch*的缓冲区作为工作的开始；显示缓冲区列表的*Buffer List*缓冲区；显示帮助信息的*Help*缓冲区；等等。
+		4、每个缓冲区都有一个相关的主编辑模式，这个主模式左右着这个缓冲区里的大部分行为。
+		5、在emacs里，窗口(window)是指emacs屏幕画面上的被分割的区域；而X窗口在emacs里被称为窗格(frame)。
+		6、多窗口编辑同一缓冲区时应注意：标记(mark)是与缓冲区关联的，而插入点(point)(光标)是与窗口关联的。
+		7、在多窗口状态下emacs没有提供直接跳转到某指定窗口的指令，只能顺时针跳转到下一窗口，但可以利用重复执行命令C-u或M-num来一次跳转多个窗口。
+		8、每个缓冲区都有其各自的当前目录(默认目录)(the current buffer's default directory)，默认的它就是与缓冲区关联的文件所在的目录，当然，当前目录可以用命令 cd 来修改，可以用 pwd 命令来查看。
+		9、用函数 buffer-name 可取得缓冲区名字字串。一般的，系统用途的临时性的缓冲区名字都以 * 开头，而"隐藏缓冲区"则以空格开头。
+	**文件操作：
+		C-x C-f		find-file :打开文件。输入文件名(不可有通配符)后,将创建一个与指定文件相关联的新的缓冲区，即可以开始编辑该文件了。输入文件名时space键有auto complete功能，同命令行中的Tab键。若输入一个不存在的文件名，则新建该文件并进行编辑。也可以直接在启动emacs的命令行中加文件名(可有通配符)来打开文件，如：emacs test.*。
+		C-x C-v		find-alternate-file :打开文件，但以其替换当前缓冲区。
+		C-x C-r		find-file-read-only :打开文件，并设为只读。
+		C-x i		insert-file :在当前插入点插入指定文件的内容。
+		C-x C-w		write-file :另存当前缓冲区，提示输入文件名，可直接回车，也可输入另一个文件名以另存为。
+		set-visited-file-name :为缓冲关联之文件改名。功能与 write-file 类似，也是输入一个新文件名并另存之。但其功能更多一些，感觉是为了程序而设计，主要有：若指定新文件名为一空串，则该缓冲变为不与任何文件关联；若参数 ALONG-WITH-FILE 的值为 non-nil ，则去修改文件名而不是另存为。
+		find-file-at-point :打开文件，但会依据当前光标左近的词来提示默认要打开的文件。该命令在Shell模式下特别有用。常这样绑定：(global-set-key "\C-xf" 'find-file-at-point) ，参见"emacs配置小技巧"第96。命令 ffap 是其别名。
+		ffap-read-only :以只读方式打开文件，会依据当前光标左近的词来提示默认要打开的文件。该功能由包 ffap.el 提供，使用之前必须得先调用 (require 'ffap) 才行。
+		ff-find-other-file :常用于C模式，查找头文件或体文件。
+		ff-find-related-file :常用于C模式，查找头文件或体文件。
+	**缓冲区操作：
+		**基本：
+			C-x C-s		save-buffer :保存当前缓冲区。
+			C-x s		save-some-buffers :针对所有缓冲区依次提问是否保存。按"!"保存所有；按"q"退出该命令；按"."保存当前提问缓冲区并退出该命令；按"C-r"则以查看模式(view mode)查看当前提问缓冲区，再按"C-c"则退出查看模式并回到该命令。
+			M-~		not-modified :当前缓冲区置为未修改。Mark current buffer as unmodified, not needing to be saved.With prefix arg(M--), mark buffer as modified, so C-x C-s will save.
+			C-x b		switch-to-buffer :在minibuffer输入buffer的名字(默认值是刚切换的buffer名)，将在当前窗口切换编辑的buffer。输入名字时space键有auto complete功能，同命令行中的Tab键。若输入一个不存在的buffer名，则以该名新建一个空的不与文件相关联的buffer，该buffer在存盘后才与文件相关联。有些内部的buffer(就是没关联到文件的buffer)是用*开头和结束，这个也要打，如*scratch*。
+			C-x C-b		list-buffers :打开一个新窗口给出一个缓冲区清单，模式名为"Buffer Menu"。这是系统默认的缓冲区管理界面。在该窗口中有如下一些子命令。
+				首列缓冲区状态标识的含义：
+					.   :已显示。
+					*   :已修改。
+					%   :只读。
+					D   :标记为待删除。
+					>   :标记为待显示。
+					S   :标记为待存盘。
+				p		previous-line :上一项。
+				n 或 SPC		next-line :下一项。
+				%		Buffer-menu-toggle-read-only :转换当前项缓冲区为只读。
+				g		Buffer-menu-revert :刷新。
+				e 或 f 或 RET		Buffer-menu-this-window :立刻打开该项在当前窗口。
+				o		Buffer-menu-other-window :立刻打开该项在另一窗口，光标跳转到那个窗口。
+				C-o		Buffer-menu-switch-other-window :立刻打开该项在另一窗口，但光标不动。
+				1		Buffer-menu-1-window :立刻打开该项并使其扩大为唯一的窗口。
+				2		Buffer-menu-2-window :
+				d 或 k 或 C-k		Buffer-menu-delete :当前项标记为待删除(D)。光标下移。
+				C-d		Buffer-menu-delete-backwards :当前项标记为待删除(D)。光标上移。
+				s		Buffer-menu-save :当前项标记为待存盘(S)。光标下移。
+				m		Buffer-menu-mark :标记为待显示(>)。光标下移。
+				u		Buffer-menu-unmark :去掉当前项的待操作标记。光标下移。
+				BS		Buffer-menu-backup-unmark : :去掉前一项的待操作标记。光标上移。
+				x		Buffer-menu-execute :执行待删除和待存盘标记。
+				v		Buffer-menu-select :执行待显示。将新创建一些窗口以显示标记为待显示的项。
+				MOUSE-2		Buffer-menu-mouse-select :
+				V		Buffer-menu-view :打开当前项缓冲区并进入查看模式(View mode)。
+				~		Buffer-menu-not-modified :当前项缓冲区设为未修改。对于未修改的文件emacs不会对其进行自动保存操作。未修改文件若被进行了修改则其未修改文件内容会被保存到备份文件filename~中。
+				t		Buffer-menu-visit-tags-table :当前项缓冲区若为tags table文件，则相当于重新执行了一下 visit-tags-table 命令将其符号表装入。
+				b		Buffer-menu-bury :
+				?		describe-mode :
+				M-s a C-s		Buffer-menu-isearch-buffers :在所有加标记的缓冲区里进行增量查找。
+				q		quit-window :退出。
+			C-x k		kill-buffer :删除(关闭)一个缓冲区，并不会删除其所关联的文件。切换缓冲区时只是把一个缓冲区隐藏了，但其依然是活动的，可以再被切换回来，而删除则不可。
+			rename-buffer :重命名当前缓冲区。注意：并不会重命名其关联的文件，状态行显示的是缓冲区名字而非文件名。
+			rename-uniquely :类似于rename-buffer命令，重命名当前缓冲区，但不用输入新名字，而会自动指定一个类似的未被使用的名字。该函数对于创建多个shell进程缓冲区或多个mail缓冲区很有用。注意：并不会重命名其关联的文件，状态行显示的是缓冲区名字而非文件名。
+			uniquify-buffer-name-style :该变量由内置包 uniquify.el 提供，用于指定一种对重名缓冲区名字进行重命名的更有意义的风格。默认的，当新打开的缓冲区的名字与已有缓冲区发生重名时，新缓冲区名只是加一个序号以做区分，但这样的话两个缓冲区不很容易分清对应到哪个文件，而该变量可使得两个缓冲区重命名时加上部分父目录，那么缓冲区与具体文件的对应关系就可以分清楚了。都有哪些风格参见该变量的文档。其配置的例子参见"emacs配置小技巧"第68。
+			C-x C-q		toggle-read-only :翻转缓冲区的只读状态，并不会改变其关联的文件的权限。该命令实际翻转的是变量 buffer-read-only 的值，也可直接设置该变量以修改只读状态。该命令的另一功能是连带进入View辅模式，若变量 view-read-only 为 non-nil ，则切换到只读状态时当前缓冲区会自动进入View辅模式，相应的，若再切换回非只读状态则当前缓冲区会自动退出View辅模式。不是任何情况下都能保证在进入只读状态时能连带进入View辅模式，也不是只有该命令才保证进入只读状态时能连带进入View辅模式，具休参见"只读状态与View辅模式"。
+			bs-show :bs-show函数类似于list-buffers函数，提供一个缓冲区清单以供操作，扩展了默认的缓冲区管理，但更好使。由包 bs.el 支持。bs-show函数可以带参数以便显示不同类型的缓冲区清单，默认不带参数时显示"files"类型缓冲区清单。将自动调用bs--configuration-name-for-prefix-arg函数对其参数进行分析并找到对应的变量，再由变量决定显示何种类型的缓冲区清单，具体的：无参数对应变量bs-default-configuration，其默认值为"files"；整型参数对应变量bs-configurations，其默认值为一个列表，简单说明如下，1为"all"，2为"files"，3为"files-and-scratch"，4为"all-intern-last"，具体请查看帮助；其它参数(包括C-u和M--)对应变量bs-alternative-configuration，其默认值为"all"。可将如下行加入~/.emacs中以将其绑定到键 C-x C-b 上而替换默认的list-buffers函数：(global-set-key "\C-x\C-b" 'bs-show) 。
+				其缓冲区清单窗口主模式名为：Buffer-Selection-Menu ，基本操作与 list-buffers 提供的缓冲区清单操作基本是一样的。
+				p		bs-up :上移。
+				n		bs-down :下移。
+				g		bs-refresh :刷新。
+				-		negative-argument :反向前导参数。
+				1 .. 9		digit-argument :数字前导参数。
+				a		bs-toggle-show-all :翻转显示全部缓冲区还是某个部分(子集)缓冲区(根据当前配置)。
+				+		bs-set-current-buffer-to-show-always :标记当前缓冲区为总是显示(缓冲区名称前面有个加号 + )，使其在每次打开缓冲区清单时都显示出来。某些缓冲区比如 *Help* 并不在默认打开的缓冲区清单中显示出来，加上该标志后则在每次默认打开的缓冲区清单中都显示出来。
+				bs-set-current-buffer-to-show-never :
+				M		bs-toggle-current-to-show :在"总是不显示、总是显示、正常显示"这三种显示标记间翻转。总是不显示标志(缓冲区名称前面有个减号 - )会导致再打开缓冲区清单时该缓冲区不显示，即隐藏了，要想再次看见该缓冲区，则需执行 a 命令。
+				f 或 RET 或 SPC		bs-select :打开当前缓冲区。
+				o		bs-select-other-window :打开当前缓冲区在另一个窗口。
+				C-o		bs-tmp-select-other-window :打开当前缓冲区在另一个窗口，但光标还保留在缓冲区列表中。
+				v		bs-view :打开当前缓冲区在另一个窗口，并将此缓冲区转换为只读且进入view模式。
+				!		bs-select-in-one-window :打开当前缓冲区并关闭其它窗口。
+				F		bs-select-other-frame :打开当前缓冲区在另一个窗格。
+				s		bs-save :立即保存当前缓冲区。
+				k 或 d		bs-delete :立即删除当前缓冲区。
+				S		bs-show-sorted :以下一个排序规则重排缓冲区列表。
+				b		bs-bury-buffer :将当前缓冲区重新排列到列表中同类缓冲区的最后一个位置上，下一个缓冲区顶上来。Bury buffer on current line.
+				%		bs-toggle-readonly :翻转当前缓冲区的只读状态。
+				~		bs-clear-modified :去除当前缓冲区的已修改状态。
+				m		bs-mark-current :加标记，光标下移。可带前导参数。加标记后可导致一些操作是针对多个缓冲区执行的，比如，命令 f 会将所有加上标记的缓冲区及当前缓冲区同时在多个窗口中打开。
+				u		bs-unmark-current :去标记，光标下移。可带前导参数。
+				q 或 C-c C-c		bs-kill :关闭缓冲区列表。
+				C-] 或 C-g		bs-abort :
+				t		bs-visit-tags-table :
+				?		bs-help :显示帮助信息。
+			bs-cycle-previous :切换到上一个缓冲区。由包 bs.el 支持。可将如下行加入~/.emacs中以将其绑定到键 M-p 上：(global-set-key "\M-p"  'bs-cycle-previous) 。
+			bs-cycle-next :切换到下一个缓冲区。由包 bs.el 支持。可将如下行加入~/.emacs中以将其绑定到键 M-n 上：(global-set-key "\M-n"  'bs-cycle-next) 。
+		**多缓冲区查找：在当前打开的多个缓冲区中进行查找。
+			1、命令 list-buffers 打开的缓冲区列表模式提供的命令 Buffer-menu-isearch-buffers 能在所有加标记的缓冲区里进行增量查找，但日常使用的是 bs-show 提供的缓冲区管理界面，而其又没有提供多缓冲区查找的功能。
+			2、命令 multi-occur-in-matching-buffers 是一个不错的能在多个指定缓冲区(由一个正则表达式匹配出来)中进行搜索并显示出结果的方法。
+			3、以下函数对 multi-occur-in-matching-buffers 进行了再封装，使不必再指定缓冲区，而是直接在所有存在的缓冲区中进行搜索。
+				(defun zhl-multi-occur-in-matching-buffers (regexp &optional allbufs)
+				  "Show all lines matching REGEXP in all buffers."
+				  (interactive (occur-read-primary-args))
+				  (multi-occur-in-matching-buffers ".*" regexp))
+			4、其实函数 multi-isearch-buffers (非交互命令)已经提供了多缓冲区递增查找的能力，所要做的就是指定一个合适的缓冲区列表，而命令 Buffer-menu-isearch-buffers 就是利用该函数实现的。
+			5、以下函数利用 multi-isearch-buffers 实现了多缓冲区递增查找，其 and 部分指定了缓冲区列表的过滤条件，那些 * 开头的系统缓冲区和空格开头的隐藏缓冲区将不被查找，自己需要的过滤条件可以再往里加。
+				(defun zhl-isearch-buffers ()
+				  "isearch multiple buffers."
+				  (interactive)
+				  (multi-isearch-buffers
+				   (delq nil (mapcar (lambda (buf)
+				                       (set-buffer buf)
+				                       (and (not (equal major-mode 'dired-mode))
+				                            (not (string-match "^[ *]" (buffer-name buf)))
+				                            buf))
+				                     (buffer-list)))))
+			6、参考 http://stackoverflow.com/questions/2641211/emacs-interactively-search-open-buffers 。
+			7、命令 multi-occur 与命令 multi-occur-in-matching-buffers 的功能相同，但其缓冲区参数是个列表，因而可以采用说明5中的方法来过滤出一个精细的缓冲区列表，并在这些过滤出的缓冲区中进行小范围查找。
+				开头一直使用 zhl-multi-occur-in-matching-buffers 在所有缓冲区中查找，但后来想将 TAGS 缓冲区排除在外，可是没想出合适的正则表达式能匹配除 TAGS 外的所有字串。
+				通过定义 zhl-multi-occur 能很好的解决这个问题，即将那些不需要查找的缓冲区排除在外。另外，对默认要查找的串也进行了优化，会取当前选中字串或当前光标所在字串。
+				(defun zhl-multi-occur (regexp)
+				  "Show all lines matching REGEXP in some specified buffers."
+				  (interactive (list (read-regexp "zhl matching regexp"
+				                                  (if mark-active     ;;这里还可以加上将默认字串变小写及自动灭活选中的操作，具体参考"emacs配置小技巧"第82。
+				                                      (buffer-substring-no-properties (region-beginning) (region-end))
+				                                    (current-word nil)))))
+				  (multi-occur
+				   (delq nil (mapcar (lambda (buf)
+				                       (set-buffer buf)
+				                       (and (not (equal major-mode 'dired-mode))
+				                            (not (string-match "^[ *]" (buffer-name buf)))
+				                            (not (equal major-mode 'tags-table-mode)) ;not search in TAGS
+				                            buf))
+				                     (buffer-list)))
+				   regexp))
+			8、参考"emacs配置小技巧"第82。
+	**自动备份与自动保存：自动备份与自动保存是两个概念。
+		**自动备份：自动备份文件(形如 filename~ 的)是指在保存文件前对原始文件的一个备份。
+			变量 make-backup-files :为 nil 则不生成自动备份文件。为 Non-nil 则在第一次保存文件时制作一个备份文件(形如 filename~ 的)，第一次是指本次会话中第一次保存该文件，若在本次会话中其后再修改文件再保存，则不会改变这个备份文件。备份文件的制作有两种方法：重命名和拷贝，重命名是指将原始文件重命名为备份文件而将缓冲区内容保存在一个新文件中，新文件的属主和属组设为自己和默认，拷贝是指将原始文件复制一份为备份文件而将缓冲区内容在原始文件中从头再写一遍，原始文件的属主和属组均不变，变量 backup-by-copying 控制是采用哪种策略来制作备份文件，默认值为 nil ，即采用重命名方式。
+			变量 backup-inhibited :为 Non-nil 时则不管其它参数为何值都不生成自动备份文件。该变量分本地值和全局值，全局值默认为 nil 。在使用Linux下的emacs-23.1.1时发现针对Java缓冲区的该变量本地值为 t ，所以编辑Java文件时不生成自动备份文件，但编辑 ~/.emacs 时其无本地值而用全局值，所以会生成自动备份文件。
+		**自动保存：自动保存文件(形如 #filename# 的)是指对缓冲区内容改变后而又未存盘时系统帮助保存的临时文件，在系统崩溃时不至于丢失太多改变。
+			auto-save-mode :翻转自动保存功能。
+			变量 auto-save-default :为 Non-nil 则默认使能自动保存。默认为 t 。
+			变量 auto-save-interval :指间隔多少个输入事件(input events)执行一次自动保存，为0则不信赖于击键。默认为300。
+			变量 auto-save-timeout :指间隔多少秒的空闲时间(idle time)执行一次自动保存，为0则不信赖于空闲。默认为30。
+			recover-file :从自动存盘文件#filename#中恢复文件内容。该命令常用于emacs程序异常中止后恢复文件。
+			变量 delete-auto-save-files :控制在缓冲区保存或关闭后是否删除自动存盘文件。默认为 t 。
+	**窗口操作：
+		**基本：
+			C-x 0		delete-window :关掉当前窗口，使其与另一窗口合并。
+			C-x 1		delete-other-windows :使当前窗口扩大为唯一的窗口。
+			C-x o		other-window :顺时针跳到另一个窗口。
+			C-x 2		split-window-vertically :把当前窗口分为上下两个小窗口，包含同一缓冲区。
+			C-x 3		split-window-horizontally :把当前窗口分为左右两个小窗口，包含同一缓冲区。
+			C-x ^		enlarge-window :加高当前窗口一行，其它窗口将被压缩。
+			shrink-window :压低当前窗口一行，其它窗口将被加高。
+			C-x }		enlarge-window-horizontally :加宽当前窗口一列，其它窗口将被压缩。
+			C-x {		shrink-window-horizontally :变窄当前窗口一列，其它窗口将被加宽。
+			C-x -		shrink-window-if-larger-than-buffer :如果内容小于窗口行数，则压低窗口到内容行数。
+			C-x +		balance-windows :使各窗口平均分配空间。
+			compare-windows :进行当前窗口与下一窗口内容的比较。两窗口光标必须都处于开始比较的位置，命令完成后两窗口都滚动(需要的话)且两窗口光标都定位于第一个出现不同的地方。在变量 compare-windows-sync 为 non-nil 时，连续执行该命令会有很神奇的效果 -- 第二次执行时会高亮出相异的文本，第三次执行时则定位到下一个不同点，然后循环往后。
+			C-x 4 0		kill-buffer-and-window :关闭当前窗口及其缓冲区。
+			C-x 4 命令 :针对下一窗口的操作。
+				C-x 4 f 或 C-x 4 C-f		 :到另一窗口打开一文件。
+				C-x 4 r		 :到另一窗口以只读方式打开一文件。
+				C-x 4 b		 :到另一窗口切换到指定缓冲区。
+				C-x 4 C-o		 :将另一窗口切换到指定缓冲区，光标并不跳转。
+		**窗口分裂的默认方式：是水平分裂还是垂直分裂。
+			1、执行查看帮助或在另一窗口打开文件等操作时会将当前窗口分裂为两个并用其中一个显示结果，分裂时可纵向分裂(vertical splitting)为上下两个窗口或横向分裂(horizontal splitting)为左右两个窗口，依据的规则依次如下：具体可参考函数 split-window-sensibly 的帮助。
+				a. 如果变量 split-height-threshold 为一整数，且指定窗口高度(行数)大于它且能被纵向分裂，则纵向分裂为上下两个窗口。
+				b. 否则，如果变量 split-width-threshold 为一整数，且指定窗口宽度(列数)大于它且能被横向分裂，则横向分裂为左右两个窗口。
+				c. 如果以上都不行，而指定窗口又是当前窗格中的唯一窗口，那么尝试纵向分裂而不管 split-height-threshold 为何值。
+				d. 如果还不行，则不再尝试分裂。
+			2、可以强制指定纵向分裂为窗口默认分裂方式(即不再横向分裂)，配置以下两条语句到 ~/.emacs 中即可。
+				(setq split-width-threshold nil)
+				;; (setq split-height-threshold 0)
+				注：若 split-height-threshold 设为0则可能导致分裂出很多窗口，每次要弹出窗口时都进行分裂，屏幕会很乱，那么保留其默认值(80)后，窗口一般只分裂一次，第二次有分裂需求时会直接使用上次分裂出的窗口。
+			3、可以强制指定横向分裂为窗口默认分裂方式(即不再纵向分裂)，配置以下两条语句到 ~/.emacs 中即可。
+				(setq split-height-threshold nil)
+				;; (setq split-width-threshold 0)
+				注：若 split-width-threshold 设为0则可能导致分裂出很多窗口，每次要弹出窗口时都进行分裂，屏幕会很乱，那么保留其默认值(160)后，窗口一般只分裂一次，第二次有分裂需求时会直接使用上次分裂出的窗口。
+	**窗格操作：窗格(frame)即X窗口。
+		说明：1、窗格的位置和宽高由变量initial-frame-alist(初始窗格)和default-frame-alist(后续窗格)指定，可以将下面两句加到~/.emacs文件中以使窗格在打开时有合适的位置和宽高。注意emacs里以字符来衡量位置和宽高，因此当字体不同时其值是不同的。可以使用X工具'xwininfo'来测试当前emacs窗口的宽高。
+					(if window-system (setq initial-frame-alist (append '((font . "7x14") (top . 0) (left . 0) (width . 138) (height . 48)) initial-frame-alist)))
+					(if window-system (setq default-frame-alist (append '((font . "7x14") (top . 1) (left . 1) (width . 136) (height . 46)) default-frame-alist)))
+			2、窗格标题名使用缓冲区的名字。如果发现所有窗格都是同一个名字，那么可能是配置文件.Xdefaults在行"emacs.title"中给emacs窗格定义了一个统一的名字，删除即可。
+			3、变量 frame-title-format 保存了窗格标题行的内容，通过修改该变量可以调整窗格标题行内容。该变量值的结构和解释与变量 mode-line-format 基本一致。一个简单例子可参见"emacs配置小技巧"第47。
+		C-x 5 o		other-frame :跳到下一窗格。
+		C-x 5 0		delete-frame :关闭当前窗格。
+		C-x 5 1		delete-other-frames :关闭其它窗格。
+		C-x 5 2		make-frame-command :弹出一个新窗格，显示当前缓冲区。
+		C-x 5 命令 :针对下一窗格的操作，如：C-x 5 f 或 C-x 5 C-f ，C-x 5 b ，C-x 5 r ，等。
+		C-z 或 C-x C-z		iconify-or-deiconify-frame :窗格最小化。
+		勾子 before-make-frame-hook :在创建一个新窗格前触发。
+		勾子 after-make-frame-functions :在创建一个新窗格后触发，所运行的勾子函数有一个 frame 类型的参数，代表新创建的窗格(此时当前窗格并不是这个新建窗格)。一个应用的小例子参见"emacs配置小技巧"第A0。

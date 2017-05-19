@@ -1,0 +1,143 @@
+
+本文档是"ZHL的emacs笔记"的一部分。
+
+本文档的格式是为了快速检索与浏览而专门调整的，最好用emacs来查看，将tab
+缩进显式设为3个字符，设置不自动换行，并使用outline模式，以提高学习和工
+作效率。具体配置可参考文档"ZHL的emacs笔记：配置小技巧"。
+
+本文档主要讲述的是如何在emacs下利用sdcv查词典，包含详细的配置过程及代码，
+并且在Windows和Linux下都能可靠的工作，基本知识及资料都是从网络上搜集的，
+当然，代码是本人仔细修改过的，并且一直在使用。
+
+希望本文档能给emacs同好一些帮助，任何问题或建议可以发信到 seaxii@126.com 来讨论。
+
+文档正文----------------------------------------------------------------
+
+**基本工具：书签、宏、服务器、时间戳、recentf、自动插入、desktop、session、查词典。
+	**查词典：
+		**stardict：利用 stardict 的命令行版本 sdcv 来查。
+			**说明：1、sdcv (StarDict console version)需要单独下载安装(http://stardict.sourceforge.net/)，好象现在只有Linux版本，安装后即有 sdcv 命令了，命令 sdcv -h 可查看其帮助。经实验，在FC4上可以安装(2.6.11-1.1369_FC4)，但在工作机器上(2.4.21-ECGLsmp)安装失败了。
+				2、sdcv是一个独立的命令行软件，无需StarDict的支持，只需配合词典文件即可查词。以下emacs脚本将调用 sdcv 查询后将翻译结果显示出来。
+				3、查询时如果选中了 region 就查询 region 的内容，否则就查询当前光标所在的词。
+				4、函数 kid-sdcv-to-tooltip 显示翻译结果到 tooltip 中(这需要X的支持，终端下不可用)。
+				5、函数 kid-sdcv-to-buffer 显示翻译结果到一个叫做 *sdcv* 的 buffer 里面，在这个buffer里面按 ; 则隐藏该buffer，按 i 则继续查询光标下的单词。
+				6、2011-12-13 17:42:42 发现stardict已经从sourceforge上移除了，其新地址为 http://www.stardict.org/ ，sdcv在新地址也找不到了，但sourceforge上还有sdcv项目(http://sdcv.sourceforge.net/)。
+				7、网上查到已经有人利用sdcv源码在windows下编译出纯windows版本来(http://blog.csdn.net/xiongmao86/article/details/6024071)，但编译好的程序下载不了，而且看评论可能有些问题，以后再试吧。
+				**8、如果windows下安装了cygwin，则很容易编译出在cygwin下运行的sdcv，而且网上也很容易下载到(http://artfiles.org/cygwin.org/pub/cygwinports/release/sdcv/)。以下是在windows+cygwin下成功使用sdcv的心得：
+					a.在cygwin bash的根目录下解压下载所得文件 sdcv-0.4.2-1.tar.bz2 即完成了安装。  tar jxvf sdcv-0.4.2-1.tar.bz2
+					b.文件 /usr/share/doc/Cygwin/sdcv-0.4.2.README 是一个总体说明，运行环境、编译环境和方法、词典位置等都讲到了。
+					c.cygwin用的是1.7.9-1，但这个sdcv是在1.5.19环境下编译生成的，所以运行时会说有些库找不到，尝试安装了 libreadline6 库后又说另一个库(cygintl-3.dll)找不到，而那个库却找不到安装文件，于是想尝试自己编译一把。
+						注：后来回家在笔记本的 1.5.25-15 cygwin 上又试了一下这个包，一切正常。
+						注：用命令 cygcheck -c -d cygwin 可查出cygwin的版本。
+						注：用命令 cygcheck -f /usr/bin/cygintl-3.dll 可查出该库所属的包。
+					d.正在安装编译环境时又找到了另一个网站(http://www.cnblogs.com/bamanzi/archive/2011/06/26/emacs-stardict.html)，其包含了较新环境下编译好的sdcv，下载安装(也是在cygwin根目录下解压即可)后，在1.7.9-1下可以运行，于是放弃自己编译的念头。
+					e.将词典文件复制到 /usr/share/stardict/dic/ 目录下后，在cygwin bash命令行下即可查词。
+						每部词典都是一个目录，连带目录复制过来即可。
+						可以放多部词典，那么查询结果会罗列出所有匹配词典的结果。命令 sdcv -l 会列出都安装了哪些词典。
+						词典是在网上单找的。
+						在puttycyg终端下显示中文查询结果时可能乱码，修改终端的显示编码为UTF-8即可。
+						命令 sdcv phone 即可查得 phone 的翻译结果。
+					f.再配合emacs也能正常工作。本以为只有cygwin下的emacs才能正常工作，但在纯粹的emacs for windows下实验，发现工作的也非常好。
+					g.如果装了汉译英的词典，则也能进行汉译英。在编码为UTF-8的puttycyg终端下工作挺正常，但emacs下对要翻译的汉字的解释总是乱码，即使将emacs buffer的编码调整为UTF-8也还是有问题，还未搞清原因(后来知道了原因，参见下面描述)。
+				**9、在工作的64位Linux(x86_64)下(只是普通用户)也编译通过并可以使用了，过程如下：2012-01-16 18:11:31
+					a.从官网 http://sdcv.sourceforge.net/ 下载源码包 sdcv-0.4.2.tar.bz2 并解压得目录 sdcv-0.4.2 。
+					b.进入 sdcv-0.4.2 目录，执行 ./configure ，完后执行 make 时出错：
+						lib.cpp:516: error: no matching function for call to ‘min(long unsigned int, guint32&)’
+					c.上网一查，有人问过这个问题，可能是64位系统导致的(https://bbs.archlinux.org/viewtopic.php?id=127127)，执行以下命令改一下文件：
+						sed -i 's|guint32 page_size|guint64 page_size|' src/lib/lib.cpp
+					d.再执行 make ，刚才的问题不见了，但又有错：
+						utils.cpp:34: error: ‘fgetc’ was not declared in this scope 等
+					e.上网一查，可能是因为GCC 4.4对头文件的处理规则的变化导致了在一些旧代码中找不到头文件(http://www.cyrius.com/journal/gcc)，只要再显式加上对头文件的 include 语句即可。
+					f.修改文件 src/utils.hpp ，加上以下两句，再执行 make 即可成功编译，生成的 sdcv 程序在 src 目录下，该程序不依赖其它文件，可独立运行。
+						#include <stdio.h>
+						#include <stdlib.h>
+					g.再加上词典文件即可成功查词。因为是普通用户，所以词典文件放于目录 ~/.stardict/dic 下，其实也可利用环境变量 STARDICT_DATA_DIR 来使用自己喜欢的目录(注意，词典应放于 $STARDICT_DATA_DIR\dic 下)。
+					h.再执行以下命令，以后就可以 man sdcv 看到帮助了。
+						cp doc/sdcv.1 ~/local/man/man1/
+				**10、关于乱码的问题(2012-06-06 10:32:57)：
+					起初在emacs下用sdcv时经常碰到乱码的问题，后来随着emacs对UTF-8的支持越来越好，只需将语言环境设置为UTF-8(即在所有中文编码及字体设置的最后加上语句 (set-language-environment 'UTF-8) 并重启)，就可以看到sdcv的输出能正常显示了。
+					后来知道，sdcv是在一个shell子进程中执行的，乱码是由于对子进程的输出采用的解码方式不匹配造成的，由于sdcv的输出设为utf-8编码，所以只要将针对sdcv子进程输出的解码方式设为utf-8就不会乱码了。
+					对shell子进程的编解码方式是由当前shell环境I/O的编解码配置决定的，具体参见"中文支持"中对变量 process-coding-system-alist 的描述。
+					执行sdcv的shell子进程(即当前shell环境)所用的程序也是可配置的(变量 shell-file-name 指明)，具体参见"执行shell命令"的说明。开头用的默认环境 C:/Program Files/emacs-23.3/bin/cmdproxy.exe ，其对sdcv的输出自动采用utf-8解码，显示的挺好，后来由于 diff-backup 命令需要cygwin bash才能正常工作，遂将环境改为 C:/cygwin/bin/bash.exe ，而在WinXP下之前是显式将bash环境编解码设为cn-gb的，这是因为WinXP下中文文件名在cygwin bash下需要gb2312解码才能正常显示，所以此时显示sdcv结果会乱码，那么后来显式将bash环境编解码设为utf-8再显示sdcv结果就不会乱码了，但是在cygwin bash下显示中文文件名又会乱码，这二者不能统一，只好有所取舍了。而Win7下本身对中文文件名就用的是utf-8编码，因此没有以上问题。
+					在 Emacs Shell 模式(用的 Cygwin bash )下可以正确执行sdcv命令行来查词(包括中文的)，只需将bash环境I/O的编解码设为utf-8，并在执行sdcv时指定输入和输出均为utf-8即可，比如： sdcv --utf8-output --utf8-input 电话 。
+					查中文词也是可以的，但涉及到输入中文的编码问题。
+						在将sdcv的输入输出及bash环境I/O的编解码都设为utf-8后，在 WinXP + Cygwin 1.5.25-15 + Emacs 23.1.1 下查中文词工作的很好，但在 Win7 + Cygwin 1.7.9-1 + Emacs 23.3.1 下查中文词会报错(查英文词没问题)，比如查"电话"会报如下错误："/usr/bin/bash: sdcv --data-dir /usr/share/stardict/dic --utf8-output --utf8-input -n 鐢佃瘽: No such file or directory"，在将bash环境I/O的编码方式调整为cn-gb后还会报错，但错误提示为："/usr/bin/bash: sdcv --data-dir /usr/share/stardict/dic --utf8-output --utf8-input -n 电话: No such file or directory"。
+						查找原因可能是系统的问题，因为报错是说bash找不到执行的程序，还没执行到sdcv，后来试验执行其它shell命令，当加上中文参数时也会报类似的错误，再后来将emacs退回到 23.1.1 以及更新到 23.4.1 也还是有同样的问题，又把 Cygwin 1.5.25-15 所带的旧版本 bash.exe 文件拷贝过来，能运行，但还是有同样的问题，怀疑是emacs在将命令行交给bash前对其内中文的编码有问题，但试尽了各种调整编码的方法都没能成功。
+						后来知道还有方法能直接运行一个程序而无需非要在子shell下，结果一试成功了，参见下面代码实现。原先在子shell下运行程序的函数是 start-process-shell-command ，修改后在子进程中直接运行程序的函数是 start-process 。那么现在推测失败原因可能是emacs在将命令行编码后调用bash执行时与bash配合的不好造成的，因为如果命令行没有中文而不必对命令行进行编码时，一切都工作的很好。修改运行程序的方法后，中文参数在被编码后是直接交给程序的，而不是与程序名形成命令行交给shell，所以不会再碰到与bash配合不好的问题。
+						对于非子shell下运行的程序，其编解码方式与针对子shell所设置的编解码方式无关，既可以用变量 process-coding-system-alist 针对该程序设置其编解码方式，亦可用变量 default-process-coding-system 为所有非子shell下运行的程序指定默认的编解码方式。
+						实验知，WinXP下查中文词需将编码方式设为 utf-8 才能成功，而Win7下需设为 cn-gb-unix 才能成功。另外，实验知，如果没有显式指定默认编解码方式，即未配置 default-process-coding-system 变量，WinXP和Win7也都能够自动的对中文进行正确的编码。
+						(2012-07-06 18:44:37)后来在WinXP下升级到最新的emacs，即 WinXP + Cygwin 1.5.25-15 + Emacs 23.4.1 ，再查中文词又有问题了，不得已，只好在变量 process-coding-system-alist 中为sdcv程序显式指定编解码方式了，具体配置参见"emacs配置小技巧"第[[A4]]。
+			**代码：
+			(defun kid-sdcv-to-buffer (word)       ;在另一个buffer显示。
+			  (if (or (null word) (string= word ""))
+			      (error "No word to translate"))
+			  (set-buffer (get-buffer-create "*sdcv*"))
+			  (buffer-disable-undo)
+			  (toggle-read-only -1)               ;先使缓冲区非只读，以便清空后写入翻译结果。
+			  (erase-buffer)
+			  ;; (let ((process (start-process-shell-command "sdcv" "*sdcv*" "sdcv" "--data-dir /usr/share/stardict/dic --utf8-output --utf8-input -n" word)))
+			  (let ((process (start-process "sdcv" "*sdcv*" "sdcv" "--data-dir" "/usr/share/stardict/dic" "--utf8-output" "--utf8-input" "-n" word)))
+			    (set-process-sentinel
+			     process
+			     (lambda (process state)  ;;该函数是异步触发的。
+			       (when (memq (process-status process) '(exit signal))
+			         (unless (string= (buffer-name) "*sdcv*")  ;;因为是异步触发的，所以还要判断一下当前缓冲区是否是放置翻译内容的那个缓冲区，若不是则将其显示出来。
+			           (setq kid-sdcv-window-configuration (current-window-configuration))
+			           (switch-to-buffer-other-window "*sdcv*")
+			           (local-set-key (kbd "i") 'kid-sdcv-to-buffer2)       ;功能键不要与View模式中的重合，因为尝试了很多方法也无法重定义View模式中的功能键。比如该处原来给出的键为 d ，但就是无法覆盖View模式下的半滚屏功能，即使将语句 (toggle-read-only 1) 提到前面也不行。原因以后再想。
+			           (local-set-key (kbd ";") (lambda ()
+			                                      (interactive)
+			                                      (bury-buffer)
+			                                      (unless (null (cdr (window-list))) ; only one window
+			                                        (delete-window))))
+			           (local-set-key (kbd ",") (lambda ()
+			                                      (interactive)
+			                                      (bury-buffer)
+			                                      (unless (null (cdr (window-list))) ; only one window
+			                                        (other-window 1))))
+			           (setq truncate-lines nil))           ;使缓冲区显示时能自动换行。
+			         (toggle-read-only 1)               ;使缓冲区只读，以得到View模式所带来的好处。
+			         (goto-char (point-min)))))))
+			(defun kid-sdcv-to-buffer1 ()       ;用户可自行输入待查单词。
+			  (interactive)
+			  (let ((word (if mark-active
+			                  (prog1 (buffer-substring-no-properties (region-beginning) (region-end))
+			                    (setq mark-active nil))   ;灭活选中以方便后续操作。
+			                (current-word nil))))
+			    (setq word (read-string (format "Search the dictionary for (default %s): " word) nil nil word))
+			    (kid-sdcv-to-buffer word)))
+			(global-set-key "\M-s\M-k" 'kid-sdcv-to-buffer1)
+			(defun kid-sdcv-to-buffer2 ()       ;省略了用户对待查单词的确认以提高效率。
+			  (interactive)
+			  (let ((word (if mark-active
+			                  (prog1 (buffer-substring-no-properties (region-beginning) (region-end))
+			                    (setq mark-active nil))   ;灭活选中以方便后续操作。
+			                (current-word nil))))
+			    ;; (setq word (read-string (format "Search the dictionary for (default %s): " word) nil nil word))
+			    (kid-sdcv-to-buffer word)))
+			(global-set-key "\M-sk" 'kid-sdcv-to-buffer2)
+			(defun kid-sdcv-to-tooltip ()       ;在浮动窗口显示。
+			  (interactive)
+			  (let ((begin (point-min))
+			        (end (point-max)))
+			    (if mark-active
+			        (setq begin (region-beginning)
+			              end (region-end))
+			      (save-excursion
+			        (backward-word 1)
+			        (mark-word 1)
+			        (setq begin (region-beginning)
+			              end (region-end))))
+			    (message "searching for %s ..." (buffer-substring begin end))
+			    (tooltip-show
+			     (shell-command-to-string
+			      (concat "sdcv --data-dir /usr/share/stardict/dic --utf8-output --utf8-input -n "
+			              (buffer-substring begin end))))))
+			(global-set-key "\M-s\C-k" 'kid-sdcv-to-tooltip)
+			;; 下面一段是为了在shell模式中重新绑定 M-s k 等组合键来查词典。
+			(add-hook 'shell-mode-hook
+			          (lambda ()
+			            (define-key shell-mode-map "\M-s\M-k" 'kid-sdcv-to-buffer1)
+			            (define-key shell-mode-map "\M-sk" 'kid-sdcv-to-buffer2)
+			            (define-key shell-mode-map "\M-s\C-k" 'kid-sdcv-to-tooltip)))
+		**dictionary：利用 dictionary 扩展可以连接到 dictd 来查询辞典，其功能非常强大，在 http://me.in-berlin.de/~myrkr/dictionary/index.html 处下载，安装配置可参考 http://lifegoo.pluskid.org/wiki/EmacsDictionary.html 。
